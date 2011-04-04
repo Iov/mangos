@@ -3969,7 +3969,7 @@ void Aura::HandleForceReaction(bool apply, bool Real)
             case 48020: // Demonic Circle
             case 54861: // Nitro Boosts
                 if (player->InBattleGround() && (player->HasAura(23335) || player->HasAura(23333) || player->HasAura(34976)))
-                    if (Battleground *bg = player->GetBattleGround())
+                    if (BattleGround *bg = player->GetBattleGround())
                         bg->EventPlayerDroppedFlag(player);
                 break;
             default:
