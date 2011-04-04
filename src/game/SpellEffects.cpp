@@ -5606,12 +5606,11 @@ void Spell::DoSummonVehicle(SpellEffectIndex eff_idx, uint32 forceFaction)
         if (m_caster->GetTypeId() == TYPEID_UNIT && ((Creature*)m_caster)->AI())
             ((Creature*)m_caster)->AI()->JustSummoned(vehicle);
 
-        if((((Player*)m_caster)->GetQuestStatus(12779) == QUEST_STATUS_INCOMPLETE) && (vehicle->GetCreatureInfo()->VehicleId == 156))
+        if(m_caster->GetTypeId() == TYPEID_PLAYER && ((Player*)m_caster)->GetQuestStatus(12779) == QUEST_STATUS_INCOMPLETE && vehicle->GetCreatureInfo()->VehicleId == 156)
         {
             char * Text = "Vermeidet heranfliegende Pfeile und Speere des Scharlachroten Kreuzzugs,\nindem Ihr aus ihrer Reichweite bleibt!";
             vehicle->MonsterTextEmote(Text, m_caster, true);
         }
-
     }
     else
         sLog.outError("Vehicle (guidlow %d, entry %d) NOT summoned by undefined reason. ", vehicle->GetGUIDLow(), vehicle->GetEntry());
