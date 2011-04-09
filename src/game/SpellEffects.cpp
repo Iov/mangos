@@ -6560,6 +6560,11 @@ void Spell::EffectInterruptCast(SpellEffectIndex eff_idx)
         if (Spell* spell = unitTarget->GetCurrentSpell(CurrentSpellTypes(i)))
         {
             SpellEntry const* curSpellInfo = spell->m_spellInfo;
+            
+            // hack for Moorabi - Transformation must be interruptable
+            if (curSpellInfo->Id == 55098)
+                const_cast<SpellEntry*>(curSpellInfo)->InterruptFlags |= SPELL_INTERRUPT_FLAG_INTERRUPT;
+            
             // check if we can interrupt spell
             if ((curSpellInfo->InterruptFlags & SPELL_INTERRUPT_FLAG_INTERRUPT) && curSpellInfo->PreventionType == SPELL_PREVENTION_TYPE_SILENCE )
             {
