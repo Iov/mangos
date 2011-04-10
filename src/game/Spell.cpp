@@ -5438,6 +5438,7 @@ SpellCastResult Spell::CheckCast(bool strict)
             return castResult;
     }
 
+    if(!m_IsTriggeredSpell)
     {
         SpellCastResult castResult = CheckPower();
         if(castResult != SPELL_CAST_OK)
