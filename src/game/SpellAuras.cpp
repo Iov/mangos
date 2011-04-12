@@ -8311,13 +8311,15 @@ void Aura::PeriodicDummyTick()
                     target->CastSpell(target, triggerSpells[GetAuraTicks() % 8], true);
                     return;
                 }
+                // FIX ME: Whole spell and bossfight need review
                 case 66118:                                 // Leeching Swarm 10 man
                 case 68646:
                 {
                     int32 damage = (m_modifier.m_amount * target->GetHealth()) / 100;
                     if (damage < 250)
                         damage = 250;
-                    int32 heal = damage * 68 / 100;
+                    /*int32 heal = damage * 68 / 100;*/
+                    int32 heal = damage;
                     target->CastCustomSpell(target, 66240, &damage, NULL, NULL, true, NULL, this);
                     if (Unit* caster = GetCaster())
                         target->CastCustomSpell(caster, 66125, &heal, NULL, NULL, true, NULL, this);
@@ -8329,7 +8331,8 @@ void Aura::PeriodicDummyTick()
                     int32 damage = (m_modifier.m_amount * target->GetHealth()) / 100;
                     if (damage < 250)
                         damage = 250;
-                    int32 heal = damage * 155 / 100;
+                    /*int32 heal = damage * 155 / 100;*/
+                    int32 heal = damage;
                     target->CastCustomSpell(target, 66240, &damage, NULL, NULL, true, NULL, this);
                     if (Unit* caster = GetCaster())
                         target->CastCustomSpell(caster, 66125, &heal, NULL, NULL, true, NULL, this);
