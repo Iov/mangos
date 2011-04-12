@@ -41,6 +41,7 @@
 #include <iostream>
 #include <fstream>
 #include <map>
+#include "TemporarySummon.h"
 
 #include "TargetedMovementGenerator.h"                      // for HandleNpcUnFollowCommand
 #include "MoveMap.h"                                        // for mmap manager
@@ -1885,9 +1886,17 @@ bool ChatHandler::HandleNpcDeleteCommand(char* args)
     }
 
     // Delete the creature
-    unit->CombatStop();
-    unit->DeleteFromDB();
-    unit->AddObjectToRemoveList();
+    if(!unit->IsTemporarySummon())
+    {
+        unit->CombatStop();
+        unit->DeleteFromDB();
+        unit->AddObjectToRemoveList();
+    }
+    else
+    {
+        TemporarySummon * pSummon = static_cast<TemporarySummon* >(unit);
+        pSummon->UnSummon();
+    }
 
     SendSysMessage(LANG_COMMAND_DELCREATMESSAGE);
 
