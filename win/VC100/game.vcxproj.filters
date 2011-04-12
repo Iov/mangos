@@ -500,7 +500,7 @@
       <Filter>vmaps</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\game\MapUpdater.cpp">
-	</ClCompile>
+    </ClCompile>
     <ClCompile Include="..\..\src\game\PathFinder.cpp">
       <Filter>Motion generators</Filter>
     </ClCompile>
@@ -530,6 +530,9 @@
     </ClCompile>
     <ClCompile Include="..\..\src\game\mangchat\MCS_OnlinePlayers.cpp">
       <Filter>IRC</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\game\LFG.cpp">
+      <Filter>World/Handlers</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -951,6 +954,15 @@
     <ClInclude Include="..\..\src\game\PathFinder.h">
       <Filter>Motion generators</Filter>
 	</ClInclude>
+    <ClInclude Include="..\..\src\game\MoveMap.h">
+      <Filter>World/Handlers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\game\MoveMapSharedDefines.h">
+      <Filter>World/Handlers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\game\PathFinder.h">
+      <Filter>Motion generators</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\src\game\MoveMap.h">
       <Filter>World/Handlers</Filter>
     </ClInclude>

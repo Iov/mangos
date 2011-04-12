@@ -1450,14 +1450,6 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
                     m_caster->CastCustomSpell(unitTarget, 37675, &basepoints0, NULL, NULL, true);
                     return;
                 }
-                case 38194:                                 // Blink
-                {
-                    // Blink
-                    if (unitTarget)
-                        m_caster->CastSpell(unitTarget, 38203, true);
-
-                    return;
-                }
                 case 39189:                                 // Sha'tari Torch
                 {
                     if (!unitTarget || unitTarget->GetTypeId() != TYPEID_UNIT || m_caster->GetTypeId() != TYPEID_PLAYER)
@@ -2638,8 +2630,14 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
                     }
                     return;
                 }
+                case 38194:                                 // Blink
+                {
+                    // Blink
+                    if (unitTarget)
+                        m_caster->CastSpell(unitTarget, 38203, true);
 
-
+                    return;
+                }
             }
 
             // Conjure Mana Gem
@@ -2707,8 +2705,12 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
                         }
                     }
                 }
-
-                m_caster->SetPower(POWER_RAGE,m_caster->GetPower(POWER_RAGE)-rage);
+                
+                int32 setrage = m_caster->GetPower(POWER_RAGE) - rage;
+                if (setrage < 0)
+                    setrage = 0;
+                
+                m_caster->SetPower(POWER_RAGE, setrage);
                 return;
             }
             // Slam
@@ -5995,10 +5997,14 @@ void Spell::DoSummonPossessed(SpellEffectIndex eff_idx, uint32 forceFaction)
         pos = CreatureCreatePos(m_caster, m_caster->GetOrientation());
 
     Team p_team = p_caster->GetTeam();
-    if (!pCreature->Create(p_caster->GetMap()->GenerateLocalLowGuid(HIGHGUID_UNIT), pos, creature_entry, p_team))
+    const CreatureInfo* creature_info = sCreatureStorage.LookupEntry<CreatureInfo>(creature_entry);
+    if(creature_info)
     {
-        delete pCreature;
-        return;
+        if (!pCreature->Create(p_caster->GetMap()->GenerateLocalLowGuid(HIGHGUID_UNIT), pos, creature_info, p_team))
+        {
+            delete pCreature;
+            return;
+        }
     }
 
     pCreature->SetSummonPoint(pos);
@@ -6566,6 +6572,11 @@ void Spell::EffectInterruptCast(SpellEffectIndex eff_idx)
         if (Spell* spell = unitTarget->GetCurrentSpell(CurrentSpellTypes(i)))
         {
             SpellEntry const* curSpellInfo = spell->m_spellInfo;
+            
+            // hack for Moorabi - Transformation must be interruptable
+            if (curSpellInfo->Id == 55098)
+                const_cast<SpellEntry*>(curSpellInfo)->InterruptFlags |= SPELL_INTERRUPT_FLAG_INTERRUPT;
+            
             // check if we can interrupt spell
             if ((curSpellInfo->InterruptFlags & SPELL_INTERRUPT_FLAG_INTERRUPT) && curSpellInfo->PreventionType == SPELL_PREVENTION_TYPE_SILENCE )
             {
@@ -10370,10 +10381,14 @@ void Spell::DoSummonSnakes(SpellEffectIndex eff_idx)
         pTrap->GetClosePoint(x, y, z, 2.0f, frand(0.0f, 5.0f), frand(0.0f, M_PI_F*2));
         CreatureCreatePos pos(m_caster->GetMap(), x, y, z, -m_caster->GetOrientation(), m_caster->GetPhaseMask());
 
-        if (!pSummon->Create(m_caster->GetMap()->GenerateLocalLowGuid(HIGHGUID_UNIT), pos, creature_entry, team))
+        const CreatureInfo* creature_info = sCreatureStorage.LookupEntry<CreatureInfo>(creature_entry);
+        if(creature_info)
         {
-            delete pSummon;
-            return;
+            if (!pSummon->Create(m_caster->GetMap()->GenerateLocalLowGuid(HIGHGUID_UNIT), pos, creature_info, team))
+            {
+                delete pSummon;
+                return;
+            }
         }
 
         pSummon->SetSummonPoint(pos);
