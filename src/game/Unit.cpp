@@ -212,9 +212,6 @@ Unit::Unit()
 
     m_addDmgOnce = 0;
 
-    for(int i = 0; i < MAX_TOTEM_SLOT; ++i)
-        m_TotemSlot[i] = ObjectGuid();
-
     m_ObjectSlot[0] = m_ObjectSlot[1] = m_ObjectSlot[2] = m_ObjectSlot[3] = 0;
     //m_Aura = NULL;
     //m_AurasCheck = 2000;
@@ -2816,7 +2813,7 @@ void Unit::CalculateHealAbsorb(const uint32 heal, uint32 *absorb)
 
 void Unit::AttackerStateUpdate (Unit *pVictim, WeaponAttackType attType, bool extra )
 {
-    if(hasUnitState(UNIT_STAT_CAN_NOT_REACT) || HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PACIFIED) )
+    if((hasUnitState(UNIT_STAT_CAN_NOT_REACT) || HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PACIFIED)) && (this->GetVehicle()->GetVehicleId() != 223) )
         return;
 
     if (!pVictim->isAlive())
@@ -6083,8 +6080,19 @@ bool Unit::Attack(Unit *victim, bool meleeAttack)
         return false;
 
     // player cannot attack while mounted or in vehicle
-    if(GetTypeId()==TYPEID_PLAYER && (IsMounted() || GetVehicle()))
+    if(GetTypeId()==TYPEID_PLAYER && IsMounted())
         return false;
+
+    if(GetTypeId()==TYPEID_PLAYER && GetVehicle())
+    {
+        switch(this->GetVehicle()->GetVehicleId())
+        {
+        case 223:
+            break;
+        default:
+            return false;
+        }
+    }
 
     // nobody can attack GM in GM-mode
     if(victim->GetTypeId()==TYPEID_PLAYER)
@@ -6586,7 +6594,7 @@ void Unit::_RemoveTotem(Totem* totem)
     {
         if (m_TotemSlot[i] == totem->GetObjectGuid())
         {
-            m_TotemSlot[i] = ObjectGuid();
+            m_TotemSlot[i].Clear();
             break;
         }
     }
@@ -9566,7 +9574,7 @@ int32 Unit::CalculateAuraDuration(SpellEntry const* spellProto, uint32 effectMas
     int32 mechanicMod = 0;
     uint32 mechanicMask = GetSpellMechanicMask(spellProto, effectMask);
 
-    for(int32 mechanic = MECHANIC_CHARM; mechanic <= MECHANIC_ENRAGED; ++mechanic)
+    for(int32 mechanic = FIRST_MECHANIC; mechanic < MAX_MECHANIC; ++mechanic)
     {
         if (!(mechanicMask & (1 << (mechanic-1))))
             continue;
