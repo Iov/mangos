@@ -154,8 +154,8 @@ bool VehicleKit::AddPassenger(Unit *passenger, int8 seatId)
 
     passenger->m_movementInfo.AddMovementFlag(MOVEFLAG_ONTRANSPORT);
     passenger->m_movementInfo.SetTransportData(m_pBase->GetGUID(),
-        seatInfo->m_attachmentOffsetX, seatInfo->m_attachmentOffsetY, seatInfo->m_attachmentOffsetZ,
-        seatInfo->m_passengerYaw, WorldTimer::getMSTime(), seat->first, seatInfo);
+    seatInfo->m_attachmentOffsetX, seatInfo->m_attachmentOffsetY, seatInfo->m_attachmentOffsetZ,
+    seatInfo->m_passengerYaw, WorldTimer::getMSTime(), seat->first, seatInfo);
 
     if (passenger->GetTypeId() == TYPEID_PLAYER)
     {
