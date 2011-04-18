@@ -1645,6 +1645,63 @@ void Aura::TriggerSpell()
 //                    case 65422: break;
 //                    // Rolling Throw
 //                    case 67546: break;
+                    case 69157:                             // Gaseous Blight 1
+                        if (caster->GetMap()->IsDungeon())
+                        {
+                            switch (caster->GetMap()->GetDifficulty())
+                            {
+                                case RAID_DIFFICULTY_10MAN_NORMAL:
+                                    trigger_spell_id = 70138;
+                                    break;
+                                case RAID_DIFFICULTY_10MAN_HEROIC:
+                                case RAID_DIFFICULTY_25MAN_NORMAL:
+                                    trigger_spell_id = 69161;
+                                    break;
+                                case RAID_DIFFICULTY_25MAN_HEROIC:
+                                    trigger_spell_id = 70137;
+                                    break;
+                                default:
+                                    break;
+                            }
+                        }
+                    case 69162:                             // Gaseous Blight 2
+                        if (caster->GetMap()->IsDungeon())
+                        {
+                            switch (caster->GetMap()->GetDifficulty())
+                            {
+                                case RAID_DIFFICULTY_10MAN_NORMAL:
+                                    trigger_spell_id = 69161;
+                                    break;
+                                case RAID_DIFFICULTY_10MAN_HEROIC:
+                                case RAID_DIFFICULTY_25MAN_NORMAL:
+                                    trigger_spell_id = 70139;
+                                    break;
+                                case RAID_DIFFICULTY_25MAN_HEROIC:
+                                    trigger_spell_id = 70140;
+                                    break;
+                                default:
+                                    break;
+                            }
+                        }
+                    case 69164:                             // Gaseous Blight 3
+                        if (caster->GetMap()->IsDungeon())
+                        {
+                            switch (caster->GetMap()->GetDifficulty())
+                            {
+                                case RAID_DIFFICULTY_10MAN_NORMAL:
+                                    trigger_spell_id = 70468;
+                                    break;
+                                case RAID_DIFFICULTY_10MAN_HEROIC:
+                                case RAID_DIFFICULTY_25MAN_NORMAL:
+                                    trigger_spell_id = 69161;
+                                    break;
+                                case RAID_DIFFICULTY_25MAN_HEROIC:
+                                    trigger_spell_id = 70139;
+                                    break;
+                                default:
+                                    break;
+                            }
+                        }
                     case 70017:                             // Gunship Cannon Fire
                         trigger_spell_id = 70021;
                         break;
