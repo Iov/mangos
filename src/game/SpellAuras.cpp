@@ -1645,6 +1645,15 @@ void Aura::TriggerSpell()
 //                    case 65422: break;
 //                    // Rolling Throw
 //                    case 67546: break;
+                    case 69157:                             // Gaseous Blight 1
+                        trigger_spell_id = 69159;
+                        break;
+                    case 69162:                             // Gaseous Blight 2
+                        trigger_spell_id = 69161;
+                        break;
+                    case 69164:                             // Gaseous Blight 3
+                        trigger_spell_id = 69163;
+                        break;
                     case 70017:                             // Gunship Cannon Fire
                         trigger_spell_id = 70021;
                         break;
@@ -2123,7 +2132,7 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
                             Caster->CombatStop(true);
                         }
                         return;
-                    } 
+                    }
                     case 47977:                             // Magic Broom
                         Spell::SelectMountByAreaAndSkill(target, GetSpellProto(), 42680, 42683, 42667, 42668, 0);
                         return;
@@ -3382,7 +3391,7 @@ void Aura::HandleAuraModShapeshift(bool apply, bool Real)
                         else if (hairColour == 7) modelid = 29417;
                         else if (hairColour == 4) modelid = 29416;
                     }
-                } 
+                }
                 else if (Player::TeamForRace(target->getRace()) == HORDE)
                 {
                     uint8 skinColour = target->GetByteValue(PLAYER_BYTES, 0);
@@ -4019,7 +4028,7 @@ void Aura::HandleForceReaction(bool apply, bool Real)
                         bg->EventPlayerDroppedFlag(player);
                 break;
             default:
-                break; 
+                break;
         }
     }
 }
@@ -4642,7 +4651,7 @@ void Aura::HandleAuraModStun(bool apply, bool Real)
             Unit* pCaster = GetCaster();
             if(!pCaster)
                 return;
-            
+
             pCaster->InterruptSpell(CURRENT_CHANNELED_SPELL,false);
             return;
         }
@@ -5052,11 +5061,11 @@ void Aura::HandleAuraModIncreaseSpeed(bool apply, bool Real)
     // all applied/removed only at real aura add/remove
     if(!Real)
         return;
-        
+
     Unit *target = GetTarget();
 
     GetTarget()->UpdateSpeed(MOVE_RUN, true);
-    
+
     if (apply && GetSpellProto()->Id == 58875)
         target->CastSpell(target, 58876, true);
 }
@@ -7380,7 +7389,7 @@ void Aura::HandleSchoolAbsorb(bool apply, bool Real)
                 }
             }
         }
-        else if (caster && caster->GetTypeId() == TYPEID_PLAYER && spellProto->Id == 47788 && 
+        else if (caster && caster->GetTypeId() == TYPEID_PLAYER && spellProto->Id == 47788 &&
             m_removeMode == AURA_REMOVE_BY_EXPIRE)
         {
             Player* plr = (Player*)caster;
@@ -8273,15 +8282,15 @@ void Aura::PeriodicDummyTick()
                     {
                         if (target->HasAura(54683, EFFECT_INDEX_0))
                             return;
-                        else 
+                        else
                         {
                             // Credit Scourge
                             caster->CastSpell(caster, 47208, true);
                             // set ablaze
                             target->CastSpell(target, 54683, true);
-                            ((Creature*)target)->ForcedDespawn(4000);   
+                            ((Creature*)target)->ForcedDespawn(4000);
                         }
-                    }                    
+                    }
                     break;
                 }
                 case 50789:                                 // Summon iron dwarf (left or right)
@@ -10531,7 +10540,7 @@ bool Aura::IsEffectStacking()
         case SPELL_AURA_MOD_ATTACK_POWER:                               // (Greater) Blessing of Might / Battle Shout
         case SPELL_AURA_MOD_RANGED_ATTACK_POWER:
         case SPELL_AURA_MOD_POWER_REGEN:                                // (Greater) Blessing of Wisdom
-        case SPELL_AURA_MOD_DAMAGE_PERCENT_TAKEN:                       // Glyph of Salvation / Pain Suppression / Safeguard ? 
+        case SPELL_AURA_MOD_DAMAGE_PERCENT_TAKEN:                       // Glyph of Salvation / Pain Suppression / Safeguard ?
             if (GetSpellProto()->AttributesEx6 & SPELL_ATTR_EX6_UNK26)
                 return false;
             // (Improved) Icy Talons check
