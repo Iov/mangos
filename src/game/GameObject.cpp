@@ -53,6 +53,9 @@ GameObject::GameObject() : WorldObject()
     m_spawnedByDefault = true;
     m_useTimes = 0;
     m_spellId = 0;
+    m_captureTime = 1000;
+    m_captureTicks = 50;        // 50 = 1/2* 100 (this is calculated in percents)
+    m_captureState = CAPTURE_STATE_NEUTRAL;
     m_cooldownTime = 0;
     m_goInfo = NULL;
 
@@ -174,12 +177,91 @@ bool GameObject::Create(uint32 guidlow, uint32 name_id, Map *map, uint32 phaseMa
     return true;
 }
 
-void GameObject::Update(uint32 update_diff, uint32 /*p_time*/)
+void GameObject::Update(uint32 update_diff, uint32 diff)
 {
     if (GetObjectGuid().IsMOTransport())
     {
         //((Transport*)this)->Update(p_time);
         return;
+    }
+
+    if (GetGoType() == GAMEOBJECT_TYPE_CAPTURE_POINT)
+    {
+        if (m_captureTime < diff)
+        {
+            // get go info -> search radius
+            GameObjectInfo const* info = this->GetGOInfo();
+
+            if (!info)
+                return;
+
+            float radius = info->capturePoint.radius;
+
+            // search for new players in range
+            std::list<Unit*> units;
+            CellPair p(MaNGOS::ComputeCellPair(this->GetPositionX(), this->GetPositionY()));
+            Cell cell(p);
+            cell.SetNoCreate();
+
+            MaNGOS::AnyUnitInObjectRangeCheck u_check(this, radius);
+            MaNGOS::UnitListSearcher<MaNGOS::AnyUnitInObjectRangeCheck> searcher(units, u_check);
+
+            TypeContainerVisitor<MaNGOS::UnitListSearcher<MaNGOS::AnyUnitInObjectRangeCheck>, WorldTypeMapContainer > world_unit_searcher(searcher);
+            TypeContainerVisitor<MaNGOS::UnitListSearcher<MaNGOS::AnyUnitInObjectRangeCheck>, GridTypeMapContainer >  grid_unit_searcher(searcher);
+
+            cell.Visit(p, world_unit_searcher, *this->GetMap(), *this, radius);
+            cell.Visit(p, grid_unit_searcher, *this->GetMap(), *this, radius);
+
+            // insert the new players into the object guid set
+            for (std::list<Unit*>::iterator itr = units.begin(); itr != units.end(); ++itr)
+            {
+                if ((*itr)->GetTypeId() == TYPEID_PLAYER)
+                {
+                    if (m_CapturePlayersSet.find((*itr)->GetObjectGuid()) != m_CapturePlayersSet.end())
+                        continue;
+                    else
+                        m_CapturePlayersSet.insert((*itr)->GetObjectGuid());
+                }
+            }
+
+            // ToDo - there might be some unwanted effects when there are the same number of players for each faction
+            // and the counter is close to an event trigger point;
+
+            for (std::set<ObjectGuid>::iterator itr = m_CapturePlayersSet.begin(); itr != m_CapturePlayersSet.end(); ++itr)
+            {
+                if (Player* p_captor = GetMap()->GetPlayer(*itr))
+                {
+                    // check the radius for the players already in the set; remove those which are not valid
+                    if (!p_captor->IsWithinDistInMap(this, radius))
+                    {
+                        p_captor->SendUpdateWorldState(info->capturePoint.worldState1, 0);
+                        m_CapturePlayersSet.erase(p_captor->GetObjectGuid());
+                    }
+                    else
+                    {
+                        // check use conditions:
+                        if (!p_captor->isAlive())
+                            return;
+                        if (p_captor->HasStealthAura())
+                            return;
+                        if (p_captor->HasInvisibilityAura())
+                            return;
+                        if (!p_captor->IsPvP() && !sWorld.IsPvPRealm())
+                            return;
+                        if (p_captor->IsTaxiFlying())
+                            return;
+                        if (p_captor->HasMovementFlag(MOVEFLAG_FLYING))
+                            return;
+
+                        // if conditions are ok, then use the button
+                        Use(p_captor);
+                    }
+                }
+            }
+            m_captureTime = 1000;
+        }
+        else
+            m_captureTime -= diff;
     }
 
     switch (m_lootState)
@@ -1566,17 +1648,47 @@ void GameObject::Use(Unit* user)
             // Computer may very well blow up after stealing your bank accounts and wreck your car.
             // Use() object at own risk.
 
+            // the main ideea is that every use increases or decreases a counter
+            // the slider can be updated by ticks
+            // then we can check for the transition events (when counter = a value, trigger a certain event)
+
+            // Can we expect that only player object are able to trigger a capture point or
+            // ToDo- research: could dummy creatures be involved?
+            if (user->GetTypeId() != TYPEID_PLAYER)
+                return;
+
+            Player* player = (Player*)user;
+
             GameObjectInfo const* info = GetGOInfo();
 
             if (!info)
                 return;
 
-            // Can we expect that only player object are able to trigger a capture point or
-            // could dummy creatures be involved?
-            //if (user->GetTypeId() != TYPEID_PLAYER)
-                //return;
+            // some values used in the event
+            uint32 m_neutralPercent = info->capturePoint.neutralPercent;
+            uint32 m_maxTime = info->capturePoint.maxTime;
+            uint32 m_minTime = info->capturePoint.minTime;
 
-            //Player* player = (Player*)user;
+            // ToDo: calculate this properly!!!
+            if (player->GetTeam() == ALLIANCE)
+            {
+                if (m_captureTicks < 100)
+                    ++m_captureTicks;
+            }
+            else
+            {
+                if (m_captureTicks > 0)
+                    --m_captureTicks;
+            }
+
+            // send world state
+            // slider values
+            // 0 = full horde
+            // 100 = full alliance
+            // 50 = middle
+            player->SendUpdateWorldState(info->capturePoint.worldState1, 1);
+            player->SendUpdateWorldState(info->capturePoint.worldState2, m_captureTicks);
+            player->SendUpdateWorldState(info->capturePoint.worldState3, m_neutralPercent);
 
             // ID1 vs ID2 are possibly related to team. The world states should probably
             // control which event to be used. For this to work, we need a far better system for
@@ -1586,48 +1698,119 @@ void GameObject::Use(Unit* user)
             // Call every event, which is obviously wrong, but can help in further development. For
             // the time being script side can process events and determine which one to use. It
             // require of course that some object call go->Use()
-            if (info->capturePoint.winEventID1)
+            // win event ally
+            // ally wins tower with max points
+            if (m_captureTicks == 100)
             {
-                if (!sScriptMgr.OnProcessEvent(info->capturePoint.winEventID1, user, this, true))
-                    GetMap()->ScriptsStart(sEventScripts, info->capturePoint.winEventID1, user, this);
+                if (info->capturePoint.winEventID1)
+                {
+                    if (!sScriptMgr.OnProcessEvent(info->capturePoint.winEventID1, user, this, true))
+                        GetMap()->ScriptsStart(sEventScripts, info->capturePoint.winEventID1, user, this);
+
+                    m_captureState = CAPTURE_STATE_WIN_ALLY;
+                }
             }
-            if (info->capturePoint.winEventID2)
+            // win event horde
+            // horde wins a tower with max points
+            else if (m_captureTicks == 0)
             {
-                if (!sScriptMgr.OnProcessEvent(info->capturePoint.winEventID2, user, this, true))
-                    GetMap()->ScriptsStart(sEventScripts, info->capturePoint.winEventID2, user, this);
+                if (info->capturePoint.winEventID2)
+                {
+                    if (!sScriptMgr.OnProcessEvent(info->capturePoint.winEventID2, user, this, true))
+                        GetMap()->ScriptsStart(sEventScripts, info->capturePoint.winEventID2, user, this);
+
+                    m_captureState = CAPTURE_STATE_WIN_HORDE;
+                }
             }
 
-            if (info->capturePoint.contestedEventID1)
+
+            // contest event aly
+            // horde attack tower which is in progress or is won by alliance
+            if (m_captureTicks >= 50 + m_neutralPercent/2 + 1 && player->GetTeam() == HORDE && (m_captureState == CAPTURE_STATE_PROGRESS_ALLY || m_captureState == CAPTURE_STATE_WIN_ALLY))
             {
-                if (!sScriptMgr.OnProcessEvent(info->capturePoint.contestedEventID1, user, this, true))
-                    GetMap()->ScriptsStart(sEventScripts, info->capturePoint.contestedEventID1, user, this);
+                if (info->capturePoint.contestedEventID1)
+                {
+                    if (!sScriptMgr.OnProcessEvent(info->capturePoint.contestedEventID1, user, this, true))
+                        GetMap()->ScriptsStart(sEventScripts, info->capturePoint.contestedEventID1, user, this);
+
+                    m_captureState = CAPTURE_STATE_CONTEST_ALLY;
+                }
             }
-            if (info->capturePoint.contestedEventID2)
+            // contest event horde
+            // alliance attack tower which is in progress or is won by horde
+            if (m_captureTicks <= 50 - m_neutralPercent/2 - 1 && player->GetTeam() == ALLIANCE && (m_captureState == CAPTURE_STATE_PROGRESS_HORDE || m_captureState == CAPTURE_STATE_WIN_HORDE))
             {
-                if (!sScriptMgr.OnProcessEvent(info->capturePoint.contestedEventID2, user, this, true))
-                    GetMap()->ScriptsStart(sEventScripts, info->capturePoint.contestedEventID2, user, this);
+                if (info->capturePoint.contestedEventID2)
+                {
+                    if (!sScriptMgr.OnProcessEvent(info->capturePoint.contestedEventID2, user, this, true))
+                        GetMap()->ScriptsStart(sEventScripts, info->capturePoint.contestedEventID2, user, this);
+
+                    m_captureState = CAPTURE_STATE_CONTEST_HORDE;
+                }
             }
 
-            if (info->capturePoint.progressEventID1)
+
+            // progress event aly
+            // alliance takes the tower from neutral to alliance OR alliance takes the tower from contested to allaince
+            if ((m_captureTicks == 50 + m_neutralPercent/2 + 1 && m_captureState == CAPTURE_STATE_NEUTRAL) || (m_captureState == CAPTURE_STATE_CONTEST_ALLY && player->GetTeam() == ALLIANCE))
             {
-                if (!sScriptMgr.OnProcessEvent(info->capturePoint.progressEventID1, user, this, true))
-                    GetMap()->ScriptsStart(sEventScripts, info->capturePoint.progressEventID1, user, this);
+                if (info->capturePoint.progressEventID1)
+                {
+                    if (!sScriptMgr.OnProcessEvent(info->capturePoint.progressEventID1, user, this, true))
+                        GetMap()->ScriptsStart(sEventScripts, info->capturePoint.progressEventID1, user, this);
+
+                    // set go art kit
+                    if (m_captureState == CAPTURE_STATE_NEUTRAL)
+                        this->SetGoArtKit(2);
+
+                    // set capture state to aly
+                    m_captureState = CAPTURE_STATE_PROGRESS_ALLY;
+                }
             }
-            if (info->capturePoint.progressEventID2)
+            // progress event horde
+            // horde takes the tower from neutral to horde OR horde takes the tower from contested to horde
+            if ((m_captureTicks == 50 - m_neutralPercent/2 - 1 && m_captureState == CAPTURE_STATE_NEUTRAL) || (m_captureState == CAPTURE_STATE_CONTEST_HORDE && player->GetTeam() == HORDE))
             {
-                if (!sScriptMgr.OnProcessEvent(info->capturePoint.progressEventID2, user, this, true))
-                    GetMap()->ScriptsStart(sEventScripts, info->capturePoint.progressEventID2, user, this);
+                if (info->capturePoint.progressEventID2)
+                {
+                    if (!sScriptMgr.OnProcessEvent(info->capturePoint.progressEventID2, user, this, true))
+                        GetMap()->ScriptsStart(sEventScripts, info->capturePoint.progressEventID2, user, this);
+
+                    // set go art kit
+                    if (m_captureState == CAPTURE_STATE_NEUTRAL)
+                        this->SetGoArtKit(1);
+
+                    // set capture state to horde
+                    m_captureState = CAPTURE_STATE_PROGRESS_HORDE;
+                }
             }
 
-            if (info->capturePoint.neutralEventID1)
+
+            // neutral event aly
+            // horde takes the tower from alliance to neutral
+            if (m_captureTicks == 50 + m_neutralPercent/2 && m_captureState == CAPTURE_STATE_CONTEST_ALLY)
             {
-                if (!sScriptMgr.OnProcessEvent(info->capturePoint.neutralEventID1, user, this, true))
-                    GetMap()->ScriptsStart(sEventScripts, info->capturePoint.neutralEventID1, user, this);
+                if (info->capturePoint.neutralEventID1)
+                {
+                    if (!sScriptMgr.OnProcessEvent(info->capturePoint.neutralEventID1, user, this, true))
+                        GetMap()->ScriptsStart(sEventScripts, info->capturePoint.neutralEventID1, user, this);
+
+                    m_captureState = CAPTURE_STATE_NEUTRAL;
+                    this->SetGoArtKit(0);
+                }
             }
-            if (info->capturePoint.neutralEventID2)
+            // neutral event horde
+            // alliance takes the tower from horde to neutral
+            else if (m_captureTicks == 50 - m_neutralPercent/2 && m_captureState == CAPTURE_STATE_CONTEST_HORDE)
             {
-                if (!sScriptMgr.OnProcessEvent(info->capturePoint.neutralEventID2, user, this, true))
-                    GetMap()->ScriptsStart(sEventScripts, info->capturePoint.neutralEventID2, user, this);
+                if (info->capturePoint.neutralEventID2)
+                {
+                    if (!sScriptMgr.OnProcessEvent(info->capturePoint.neutralEventID2, user, this, true))
+                        GetMap()->ScriptsStart(sEventScripts, info->capturePoint.neutralEventID2, user, this);
+
+                    m_captureState = CAPTURE_STATE_NEUTRAL;
+                    this->SetGoArtKit(0);
+                }
             }
 
             // Some has spell, need to process those further.
