@@ -6245,10 +6245,18 @@ void  Aura::HandleAuraModIncreaseMaxHealth(bool apply, bool /*Real*/)
 
 void Aura::HandleAuraModIncreaseEnergy(bool apply, bool Real)
 {
-    Unit *target = GetTarget();
-    Powers powerType = target->getPowerType();
-    if(int32(powerType) != m_modifier.m_miscvalue)
+    Unit* target = GetTarget();
+
+    if (!target)
         return;
+
+    Powers powerType = target->getPowerType();
+
+    if(int32(powerType) != m_modifier.m_miscvalue)
+    {
+        DEBUG_LOG("HandleAuraModIncreaseEnergy: unit %u change energy %u but current type %u", target->GetObjectGuid().GetCounter(), m_modifier.m_miscvalue, powerType);
+        powerType = Powers(m_modifier.m_miscvalue);
+    }
 
     UnitMods unitMod = UnitMods(UNIT_MOD_POWER_START + powerType);
 
@@ -6270,13 +6278,22 @@ void Aura::HandleAuraModIncreaseEnergy(bool apply, bool Real)
 
 void Aura::HandleAuraModIncreaseEnergyPercent(bool apply, bool /*Real*/)
 {
-    Powers powerType = GetTarget()->getPowerType();
-    if(int32(powerType) != m_modifier.m_miscvalue)
+    Unit* target = GetTarget();
+
+    if (!target)
         return;
+
+    Powers powerType = target->getPowerType();
+
+    if(int32(powerType) != m_modifier.m_miscvalue)
+    {
+        DEBUG_LOG("HandleAuraModIncreaseEnergy: unit %u change energy %u but current type %u", target->GetObjectGuid().GetCounter(), m_modifier.m_miscvalue, powerType);
+        powerType = Powers(m_modifier.m_miscvalue);
+    }
 
     UnitMods unitMod = UnitMods(UNIT_MOD_POWER_START + powerType);
 
-    GetTarget()->HandleStatModifier(unitMod, TOTAL_PCT, float(m_modifier.m_amount), apply);
+    target->HandleStatModifier(unitMod, TOTAL_PCT, float(m_modifier.m_amount), apply);
 }
 
 void Aura::HandleAuraModIncreaseHealthPercent(bool apply, bool /*Real*/)
@@ -8967,12 +8984,6 @@ bool Aura::IsLastAuraOnHolder()
     return true;
 }
 
-bool Aura::HasMechanic(uint32 mechanic) const
-{
-    return GetSpellProto()->Mechanic == mechanic ||
-        GetSpellProto()->EffectMechanic[m_effIndex] == mechanic;
-}
-
 SpellAuraHolder::SpellAuraHolder(SpellEntry const* spellproto, Unit *target, WorldObject *caster, Item *castItem) :
 m_spellProto(spellproto), m_target(target), m_castItemGuid(castItem ? castItem->GetObjectGuid() : ObjectGuid()),
 m_auraSlot(MAX_AURAS), m_auraFlags(AFLAG_NONE), m_auraLevel(1), m_procCharges(0),
@@ -9892,8 +9903,31 @@ void SpellAuraHolder::HandleSpellSpecificBoosts(bool apply)
             break;
         }
         case SPELLFAMILY_ROGUE:
+        {
+            // remove debuf savage combat
+            if (GetSpellProto()->SpellFamilyFlags & UI64LIT(0x0008000010014000))
+            {
+                // search poison
+                bool found = false;
+                Unit::SpellAuraHolderMap const& auras = m_target->GetSpellAuraHolderMap();
+                for (Unit::SpellAuraHolderMap::const_iterator itr = auras.begin(); itr != auras.end(); ++itr)
+                {
+                    uint32 flags1 = m_target->HasAuraState(AURA_STATE_DEADLY_POISON);
+                    if (itr->second->GetSpellProto()->SpellFamilyName == SPELLFAMILY_ROGUE && (flags1 & (0x80000)))
+                    {
+                        found = true;
+                        break;
+                    }
+                }
+
+                if (!found)
+                {
+                    m_target->RemoveAurasDueToSpell(58684); // Savage Combat rank 1
+                    m_target->RemoveAurasDueToSpell(58683); // Savage Combat rank 2
+                }
+            }
             // Sprint (skip non player casted spells by category)
-            if (GetSpellProto()->SpellFamilyFlags & UI64LIT(0x0000000000000040) && GetSpellProto()->Category == 44)
+            else if (GetSpellProto()->SpellFamilyFlags & UI64LIT(0x0000000000000040) && GetSpellProto()->Category == 44)
             {
                 if(!apply || m_target->HasAura(58039))      // Glyph of Blurred Speed
                     spellId1 = 61922;                       // Sprint (waterwalk)
@@ -9903,6 +9937,7 @@ void SpellAuraHolder::HandleSpellSpecificBoosts(bool apply)
             else
                 return;
             break;
+        }
         case SPELLFAMILY_HUNTER:
         {
             switch (GetId())
