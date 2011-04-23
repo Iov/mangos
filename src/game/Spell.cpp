@@ -446,6 +446,64 @@ bool Spell::FillCustomTargetMap(SpellEffectIndex i, UnitList &targetUnitMap)
     else
         radius = GetSpellMaxRange(sSpellRangeStore.LookupEntry(m_spellInfo->rangeIndex));
 
+    //Corpse Explosion
+    if (m_spellInfo->SpellFamilyName == SPELLFAMILY_DEATHKNIGHT && m_spellInfo->SpellIconID == 1737)
+    {
+        Unit* unitTarget = NULL;
+
+        targetUnitMap.remove(m_caster);
+        unitTarget = m_targets.getUnitTarget();
+
+        if (unitTarget)
+        {
+            // Cast on corpses...
+            if ((unitTarget->getDeathState() == CORPSE && !unitTarget->IsTaxiFlying() &&
+                (unitTarget->GetDisplayId() == unitTarget->GetNativeDisplayId()) && m_caster->IsWithinDistInMap(unitTarget, radius) &&
+                (unitTarget->GetCreatureTypeMask() & CREATURE_TYPEMASK_MECHANICAL_OR_ELEMENTAL) == 0) ||
+                // ...or own Risen Ghoul pet - self explode effect
+                (unitTarget->GetEntry() == 26125 && unitTarget->GetCreatorGuid() == m_caster->GetObjectGuid()) )
+            {
+                targetUnitMap.push_back(unitTarget);
+                return true;
+            }
+        }
+
+        WorldObject* result = FindCorpseUsing <MaNGOS::RaiseDeadObjectCheck>  ();
+        if (result)
+        {
+            switch(result->GetTypeId())
+            {
+                case TYPEID_UNIT:
+                case TYPEID_PLAYER:
+                    targetUnitMap.push_back((Unit*)result);
+                    break;
+                case TYPEID_CORPSE:
+                    m_targets.setCorpseTarget((Corpse*)result);
+                    if (Player* owner = ObjectAccessor::FindPlayer(((Corpse*)result)->GetOwnerGuid()))
+                        targetUnitMap.push_back(owner);
+                    break;
+                default:
+                    targetUnitMap.push_back((Unit*)m_caster);
+                    break;
+            };
+        }
+
+        if (targetUnitMap.empty())
+        {
+            // no valid targets, clear cooldown at fail
+            if (m_caster->GetTypeId() == TYPEID_PLAYER)
+                ((Player*)m_caster)->RemoveSpellCooldown(m_spellInfo->Id, true);
+            SendCastResult(SPELL_FAILED_NO_VALID_TARGETS);
+            finish(false);
+            return false;
+        }
+
+        // OK, we have all possible targets, let's sort them by distance from m_caster and keep the closest one
+//        targetUnitMap.sort(TargetDistanceOrder(m_caster));
+        targetUnitMap.resize(1);
+        return true;
+    }
+
     // Resulting effect depends on spell that we want to cast
     switch (m_spellInfo->Id)
     {
@@ -1300,7 +1358,7 @@ void Spell::DoSpellHitOnUnit(Unit *unit, uint32 effectMask)
         return;
     }
 
-    if (unit->GetTypeId() == TYPEID_PLAYER)
+    if (unit->GetTypeId() == TYPEID_PLAYER && unit->IsInWorld())
     {
         if (unit->IsInWorld())
         {
@@ -1309,7 +1367,7 @@ void Spell::DoSpellHitOnUnit(Unit *unit, uint32 effectMask)
         }
     }
 
-    if (realCaster && realCaster->GetTypeId() == TYPEID_PLAYER)
+    if (realCaster && realCaster->GetTypeId() == TYPEID_PLAYER && realCaster->IsInWorld())
         ((Player*)realCaster)->GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_CAST_SPELL2, m_spellInfo->Id, 0, unit);
 
     if (realCaster && realCaster != unit)
@@ -1407,6 +1465,7 @@ void Spell::DoSpellHitOnUnit(Unit *unit, uint32 effectMask)
     {
         m_spellAuraHolder = CreateSpellAuraHolder(m_spellInfo, unit, realCaster, m_CastItem);
         m_spellAuraHolder->setDiminishGroup(m_diminishGroup);
+        m_spellAuraHolder->SetInUse(true);
     }
     else
         m_spellAuraHolder = NULL;
@@ -1460,9 +1519,23 @@ void Spell::DoSpellHitOnUnit(Unit *unit, uint32 effectMask)
             }
 
             unit->AddSpellAuraHolder(m_spellAuraHolder);
+            m_spellAuraHolder->SetInUse(false);
         }
         else
-            delete m_spellAuraHolder;
+        {
+            if (!m_spellAuraHolder || m_spellAuraHolder->IsDeleted())
+                return;
+
+            m_spellAuraHolder->SetInUse(false);
+
+            if (m_spellAuraHolder->IsInUse())
+            {
+                m_spellAuraHolder->SetDeleted();
+                unit->AddSpellAuraHolderToRemoveList(m_spellAuraHolder);
+            }
+            else
+                delete m_spellAuraHolder;
+        }
     }
 }
 
@@ -1799,6 +1872,12 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
         {
             if (m_spellInfo->SpellFamilyFlags2 & 0x00000100)// Starfall
                 unMaxTargets = 2;
+            break;
+        }
+        case SPELLFAMILY_DEATHKNIGHT:
+        {
+            if (m_spellInfo->SpellIconID == 1737)           // Corpse Explosion
+                unMaxTargets = 1;
             break;
         }
         case SPELLFAMILY_PALADIN:
@@ -3227,8 +3306,8 @@ void Spell::prepare(SpellCastTargets const* targets, Aura* triggeredByAura)
 
         TriggerGlobalCooldown();
     }
-    // execute triggered without cast time explicitly in call point
-    else if(m_timer == 0)
+    // execute triggered or without cast time explicitly in call point
+    else if(m_timer == 0 || m_IsTriggeredSpell)
         cast(true);
     // else triggered with cast time will execute execute at next tick or later
     // without adding to cast type slot
@@ -3614,23 +3693,14 @@ void Spell::handle_immediate()
 
     for(TargetList::iterator ihit = m_UniqueTargetInfo.begin(); ihit != m_UniqueTargetInfo.end(); ++ihit)
     {
-        if (m_destroyed || ihit == m_UniqueTargetInfo.end() || m_UniqueTargetInfo.size() == 0)
-              break;
-
-        if (ihit->deleted == true)
-            continue;
-
-        DoAllEffectOnTarget(&(*ihit));
+        TargetInfo buffer = *ihit;
+        DoAllEffectOnTarget(&buffer);
     }
 
     for(GOTargetList::iterator ihit = m_UniqueGOTargetInfo.begin(); ihit != m_UniqueGOTargetInfo.end(); ++ihit)
     {
-        if (m_destroyed || ihit == m_UniqueGOTargetInfo.end() || m_UniqueGOTargetInfo.size() == 0)
-            break;
-
-        if (ihit->deleted == true)
-            continue;
-        DoAllEffectOnTarget(&(*ihit));
+        GOTargetInfo buffer = *ihit;
+        DoAllEffectOnTarget(&buffer);
     }
 
     // spell is finished, perform some last features of the spell here
@@ -3723,7 +3793,10 @@ void Spell::_handle_immediate_phase()
 
     // process items
     for(ItemTargetList::iterator ihit = m_UniqueItemInfo.begin(); ihit != m_UniqueItemInfo.end(); ++ihit)
-        DoAllEffectOnTarget(&(*ihit));
+    {
+        ItemTargetInfo buffer = *ihit;
+        DoAllEffectOnTarget(&buffer);
+    }
 
     // process ground
     for(int j = 0; j < MAX_EFFECT_INDEX; ++j)
@@ -6245,25 +6318,8 @@ SpellCastResult Spell::CheckCasterAuras() const
     SpellCastResult prevented_reason = SPELL_CAST_OK;
     // Have to check if there is a stun aura. Otherwise will have problems with ghost aura apply while logging out
     uint32 unitflag = m_caster->GetUInt32Value(UNIT_FIELD_FLAGS);     // Get unit state
-    if (unitflag & UNIT_FLAG_STUNNED)
-    {
-        // spell is usable while stunned, check if caster has only mechanic stun auras, another stun types must prevent cast spell
-        if (m_spellInfo->AttributesEx5 & SPELL_ATTR_EX5_USABLE_WHILE_STUNNED)
-        {
-            bool is_stun_mechanic = true;
-            Unit::AuraList const& stunAuras = m_caster->GetAurasByType(SPELL_AURA_MOD_STUN);
-            for (Unit::AuraList::const_iterator itr = stunAuras.begin(); itr != stunAuras.end(); ++itr)
-                if (!(*itr)->HasMechanic(MECHANIC_STUN))
-                {
-                    is_stun_mechanic = false;
-                    break;
-                }
-            if (!is_stun_mechanic)
-                prevented_reason = SPELL_FAILED_STUNNED;
-        }
-        else
-            prevented_reason = SPELL_FAILED_STUNNED;
-    }
+    if (unitflag & UNIT_FLAG_STUNNED && !(m_spellInfo->AttributesEx5 & SPELL_ATTR_EX5_USABLE_WHILE_STUNNED))
+        prevented_reason = SPELL_FAILED_STUNNED;
     else if (unitflag & UNIT_FLAG_CONFUSED && !(m_spellInfo->AttributesEx5 & SPELL_ATTR_EX5_USABLE_WHILE_CONFUSED))
         prevented_reason = SPELL_FAILED_CONFUSED;
     else if (unitflag & UNIT_FLAG_FLEEING && !(m_spellInfo->AttributesEx5 & SPELL_ATTR_EX5_USABLE_WHILE_FEARED))
@@ -6315,7 +6371,7 @@ SpellCastResult Spell::CheckCasterAuras() const
                     switch(aura->GetModifier()->m_auraname)
                     {
                         case SPELL_AURA_MOD_STUN:
-                            if (!(m_spellInfo->AttributesEx5 & SPELL_ATTR_EX5_USABLE_WHILE_STUNNED) || !aura->HasMechanic(MECHANIC_STUN))
+                            if (!(m_spellInfo->AttributesEx5 & SPELL_ATTR_EX5_USABLE_WHILE_STUNNED))
                                 return SPELL_FAILED_STUNNED;
                             break;
                         case SPELL_AURA_MOD_CONFUSE:
