@@ -12368,6 +12368,7 @@ void Unit::MonsterJump(float x, float y, float z, float o, uint32 transitTime, u
         if (!c->GetMotionMaster()->empty())
             if (MovementGenerator *movgen = c->GetMotionMaster()->top())
                 movgen->Reset(*c);
+    }
 }
 
 void Unit::SetVehicleId(uint32 entry)
