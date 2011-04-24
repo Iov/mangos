@@ -3505,6 +3505,17 @@ void Aura::HandleAuraModShapeshift(bool apply, bool Real)
                     continue;
                 }
 
+                // some aura exceptions that should not be removed
+                switch (aurSpellInfo->Id)
+                {
+                    case 72004: // Frostbite 10 - Toravon Encounter
+                    case 72098: // Frostbite 25 - Toravon Encounter
+                        ++iter;
+                        continue;
+                    default:
+                        break;
+                }
+
                 // All OK, remove aura now
                 target->RemoveAurasDueToSpellByCancel(aurSpellInfo->Id);
                 iter = slowingAuras.begin();
