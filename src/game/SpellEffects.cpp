@@ -2895,6 +2895,8 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
                     Item *item = pCaster->GetWeaponForAttack(OFF_ATTACK);
                     if (!item)
                         return;
+                    
+                    pCaster->AddComboPoints(unitTarget,1);
 
                     // all poison enchantments is temporary
                     uint32 enchant_id = item->GetEnchantmentId(TEMP_ENCHANTMENT_SLOT);
