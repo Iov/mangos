@@ -659,8 +659,8 @@ bool ChatHandler::HandlePlayerbotCommand(char* args)
 {
     if (botConfig.GetBoolDefault("PlayerbotAI.DisableBots", false))
     {
-        PSendSysMessage("|cffff0000Playerbot system is currently disabled!");
-        SetSentErrorMessage(true);
+        /*PSendSysMessage("|cffff0000Playerbot system is currently disabled!");
+        SetSentErrorMessage(true);*/
         return false;
     }
 
