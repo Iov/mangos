@@ -184,7 +184,7 @@ Creature::~Creature()
 
     if (GetTransport())
     {
-        GetTransport()->RemoveCreaturePassenger(this);
+        GetTransport()->RemovePassenger(this);
     }
 
     m_vendorItemCounts.clear();
@@ -1321,12 +1321,12 @@ bool Creature::LoadFromDB(uint32 guidlow, Map *map)
         m_movementInfo.SetTransportData(ObjectGuid(HIGHGUID_MO_TRANSPORT, data->transguid), data->trans_x, data->trans_y, data->trans_z, data->trans_o, 0, -1);
         for (MapManager::TransportSet::const_iterator iter = sMapMgr.m_Transports.begin(); iter != sMapMgr.m_Transports.end(); ++iter)
         {
-            if( (*iter)->GetGUIDLow() == data->transguid)
+            if ((*iter)->GetGUIDLow() == data->transguid)
             {
                 SetTransport(*iter);
-                GetTransport()->AddCreaturePassenger(this);
+                GetTransport()->AddPassenger(this);
                 SetLocationMapId(GetTransport()->GetMapId());
-				Relocate(GetTransport()->GetPositionX() + data->trans_x, GetTransport()->GetPositionY() + data->trans_y, GetTransport()->GetPositionZ() + data->trans_z, data->trans_o);
+                Relocate(GetTransport()->GetPositionX() + data->trans_x, GetTransport()->GetPositionY() + data->trans_y, GetTransport()->GetPositionZ() + data->trans_z, data->trans_o);
                 break;
             }
         }
@@ -1334,7 +1334,7 @@ bool Creature::LoadFromDB(uint32 guidlow, Map *map)
     else if (GetTransport())
     {
         m_movementInfo.SetTransportData(ObjectGuid(GetTransport()->GetGUID()), GetTransOffsetX(), GetTransOffsetY(), GetTransOffsetZ(), GetTransOffsetO(), 0, -1);
-        GetTransport()->AddCreaturePassenger(this);
+        GetTransport()->AddPassenger(this);
         SetLocationMapId(GetTransport()->GetMapId());
 		Relocate(GetTransport()->GetPositionX() + GetTransOffsetX(), GetTransport()->GetPositionY() + GetTransOffsetY(), GetTransport()->GetPositionZ() + GetTransOffsetZ(), GetTransOffsetO());
     }

@@ -626,7 +626,7 @@ Player::~Player ()
     delete PlayerTalkClass;
 
     if (GetTransport())
-        GetTransport()->RemovePlayerPassenger(this);
+        GetTransport()->RemovePassenger(this);
 
     for(size_t x = 0; x < ItemSetEff.size(); x++)
         if(ItemSetEff[x])
@@ -1832,7 +1832,7 @@ bool Player::TeleportTo(uint32 mapid, float x, float y, float z, float orientati
     // if we were on a transport, leave
     if (!(options & TELE_TO_NOT_LEAVE_TRANSPORT) && GetTransport())
     {
-        GetTransport()->RemovePlayerPassenger(this);
+        GetTransport()->RemovePassenger(this);
         SetTransport(NULL);
         m_movementInfo.ClearTransportData();
     }
@@ -16250,7 +16250,7 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder *holder )
                 }
 
                 SetTransport(transport);
-                transport->AddPlayerPassenger(this);
+                transport->AddPassenger(this);
                 SetLocationMapId(transport->GetMapId());
                 break;
             }
