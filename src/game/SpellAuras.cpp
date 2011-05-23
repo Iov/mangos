@@ -346,7 +346,7 @@ pAuraHandler AuraHandler[TOTAL_AURAS]=
     &Aura::HandleNoImmediateEffect,                         //291 SPELL_AURA_MOD_QUEST_XP_PCT           implemented in Player::GiveXP
     &Aura::HandleAuraOpenStable,                            //292 call stabled pet
     &Aura::HandleAuraAddMechanicAbilities,                  //293 SPELL_AURA_ADD_MECHANIC_ABILITIES  replaces target's action bars with a predefined spellset
-    &Aura::HandleNULL,                                      //294 2 spells, possible prevent mana regen
+    &Aura::HandleAuraStopNaturalManaRegen,                  //294 No natural mana regen                 implemented in Player:Regenerate
     &Aura::HandleUnused,                                    //295 unused (3.2.2a)
     &Aura::HandleAuraSetVehicle,                            //296 SPELL_AURA_SET_VEHICLE_ID sets vehicle on target
     &Aura::HandleNULL,                                      //297 1 spell (counter spell school?)
@@ -9841,6 +9841,10 @@ void SpellAuraHolder::HandleSpellSpecificBoosts(bool apply)
                 case 71533:
                 {
                     spellId1 = 70871;
+                }
+                case 62692:                                 // Aura of Despair
+                {
+                    spellId1 = 64848;
                     break;
                 }
                 case 71905:                                 // Soul Fragment
@@ -11060,3 +11064,18 @@ void Aura::HandleAuraAoeCharm(bool apply, bool real)
     }
 }
 
+void Aura::HandleAuraStopNaturalManaRegen(bool apply, bool real)
+{
+    if (!real)
+        return;
+    
+    Unit* target = GetTarget();
+
+    if (!target)
+        return;
+
+    if (apply)
+        target->RemoveFlag(UNIT_FIELD_FLAGS_2, UNIT_FLAG2_REGENERATE_POWER);
+    else
+        target->SetFlag(UNIT_FIELD_FLAGS_2, UNIT_FLAG2_REGENERATE_POWER);
+}
