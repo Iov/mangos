@@ -1056,8 +1056,10 @@ void Aura::HandleAddModifier(bool apply, bool Real)
 
     if (apply)
     {
+        SpellEntry const* spellProto = GetSpellProto();
+
         // Add custom charges for some mod aura
-        switch (GetSpellProto()->Id)
+        switch (spellProto->Id)
         {
             case 17941:                                     // Shadow Trance
             case 22008:                                     // Netherwind Focus
@@ -1082,6 +1084,13 @@ void Aura::HandleAddModifier(bool apply, bool Real)
             // prevent expire spell mods with (charges > 0 && m_stackAmount > 1)
             // all this spell expected expire not at use but at spell proc event check
             GetSpellProto()->StackAmount > 1 ? 0 : GetHolder()->GetAuraCharges());
+
+        // Everlasting Affliction, overwrite wrong data, if will need more better restore support of spell_affect table
+        if (spellProto->SpellFamilyName == SPELLFAMILY_WARLOCK && spellProto->SpellIconID == 3169)
+        {
+            m_spellmod->mask = UI64LIT(0x0000010000000002); // Corruption and Unstable Affliction
+            m_spellmod->mask2 = 0x00000000;
+        }
     }
 
     ((Player*)GetTarget())->AddSpellMod(m_spellmod, apply);
@@ -2664,6 +2673,16 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
 
                 if (pSummon && pCaster)
                     pSummon->GetMotionMaster()->MovePoint(0, pCaster->GetPositionX(), pCaster->GetPositionY(), pCaster->GetPositionZ());
+
+                return;
+            }
+            case 43681:                                     // Inactive
+            {
+                if (!target || target->GetTypeId() != TYPEID_PLAYER || m_removeMode != AURA_REMOVE_BY_EXPIRE)
+                    return;
+
+                if (target->GetMap()->IsBattleGround())
+                    ((Player*)target)->LeaveBattleground();
 
                 return;
             }
@@ -9835,17 +9854,17 @@ void SpellAuraHolder::HandleSpellSpecificBoosts(bool apply)
                             caster->RemoveAurasDueToSpell(34027);
                     return;
                 }
+                case 62692:                                 // Aura of Despair
+                {
+                    spellId1 = 64848;
+                    break;
+                }
                 case 70867:                                 // Soul of Blood Qween
                 case 71473:
                 case 71532:
                 case 71533:
                 {
                     spellId1 = 70871;
-                }
-                case 62692:                                 // Aura of Despair
-                {
-                    spellId1 = 64848;
-                    break;
                 }
                 case 71905:                                 // Soul Fragment
                 {
@@ -9953,7 +9972,7 @@ void SpellAuraHolder::HandleSpellSpecificBoosts(bool apply)
                     if (!apply)
                     {
                         Unit* caster = GetCaster();
-                        if (caster || caster->HasAura(70752))   // Item - Mage T10 2P Bonus
+                        if (caster && caster->HasAura(70752))   // Item - Mage T10 2P Bonus
                         {
                             cast_at_remove = true;
                             spellId1 = 70753;                   // Pushing the Limit
