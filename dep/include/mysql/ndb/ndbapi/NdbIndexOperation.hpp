@@ -91,12 +91,12 @@ public:
 
   /**
    * Define the NdbOperation to be a standard operation of type committedRead.
-   * When calling NdbTransaction::execute, this operation 
+   * When calling NdbTransaction::execute, this operation
    * read latest committed value of the record.
    *
-   * This means that if another transaction is updating the 
-   * record, then the current transaction will not wait.  
-   * It will instead use the latest committed value of the 
+   * This means that if another transaction is updating the
+   * record, then the current transaction will not wait.
+   * It will instead use the latest committed value of the
    * record.
    *
    * @return 0 if successful otherwise -1.
@@ -107,7 +107,7 @@ public:
 #endif
 
   /**
-   * Define the NdbIndexOperation to be a standard operation of type 
+   * Define the NdbIndexOperation to be a standard operation of type
    * updateTuple.
    *
    * When calling NdbTransaction::execute, this operation
@@ -118,7 +118,7 @@ public:
   int updateTuple();
 
   /**
-   * Define the NdbIndexOperation to be a standard operation of type 
+   * Define the NdbIndexOperation to be a standard operation of type
    * deleteTuple.
    *
    * When calling NdbTransaction::execute, this operation
@@ -135,7 +135,7 @@ public:
 
 #ifndef DOXYGEN_SHOULD_SKIP_DEPRECATED
   /**
-   * Define the NdbIndexOperation to be a standard operation of type 
+   * Define the NdbIndexOperation to be a standard operation of type
    * dirtyUpdate.
    *
    * When calling NdbTransaction::execute, this operation
@@ -149,7 +149,7 @@ public:
 #ifndef DOXYGEN_SHOULD_SKIP_INTERNAL
   /** @} *********************************************************************/
   /**
-   * @name Define Interpreted Program Operation 
+   * @name Define Interpreted Program Operation
    * @{
    */
 
@@ -167,7 +167,7 @@ public:
    */
   int interpretedDeleteTuple();
 #endif
-  
+
   /** @} *********************************************************************/
 
 private:
@@ -178,7 +178,7 @@ private:
 
   // Overloaded methods from NdbCursorOperation
   int indxInit(const class NdbIndexImpl* anIndex,
-	       const class NdbTableImpl* aTable, 
+	       const class NdbTableImpl* aTable,
 	       NdbTransaction*);
 
   int prepareSend(Uint32  TC_ConnectPtr, Uint64  TransactionId);

@@ -25,8 +25,8 @@ class NdbOperation;
  * @class NdbRecAttr
  * @brief Contains value of an attribute.
  *
- * NdbRecAttr objects are used to store the attribute value 
- * after retrieving the value from the NDB Cluster using the method 
+ * NdbRecAttr objects are used to store the attribute value
+ * after retrieving the value from the NDB Cluster using the method
  * NdbOperation::getValue.  The objects are allocated by the NDB API.
  * An example application program follows:
  *
@@ -38,12 +38,12 @@ class NdbOperation;
  *
  *   ndbout << MyRecAttr->u_32_value();
  * @endcode
- * For more examples, see 
+ * For more examples, see
  * @ref ndbapi_simple.cpp.
  *
- * @note The NdbRecAttr object is instantiated with its value when 
- *       NdbTransaction::execute is called.  Before this, the value is 
- *       undefined.  (NdbRecAttr::isNULL can be used to check 
+ * @note The NdbRecAttr object is instantiated with its value when
+ *       NdbTransaction::execute is called.  Before this, the value is
+ *       undefined.  (NdbRecAttr::isNULL can be used to check
  *       if the value is defined or not.)
  *       This means that an NdbRecAttr object only has valid information
  *       between the time of calling NdbTransaction::execute and
@@ -55,15 +55,15 @@ class NdbOperation;
  * from the NdbRecAttr object.
  *
  * To get a reference to the value, there are two methods:
- * NdbRecAttr::aRef (memory is released by NDB API) and 
- * NdbRecAttr::getAttributeObject (memory must be released 
+ * NdbRecAttr::aRef (memory is released by NDB API) and
+ * NdbRecAttr::getAttributeObject (memory must be released
  * by application program).
  * The two methods may return different pointers.
  *
  * There are also methods to check attribute type, attribute size and
- * array size.  
+ * array size.
  * The method NdbRecAttr::arraySize returns the number of elements in the
- * array (where each element is of size given by NdbRecAttr::attrSize). 
+ * array (where each element is of size given by NdbRecAttr::attrSize).
  * The NdbRecAttr::arraySize method is needed when reading variable-sized
  * attributes.
  *
@@ -81,7 +81,7 @@ class NdbRecAttr
 #endif
 
 public:
-  /** 
+  /**
    * @name Getting meta information
    * @{
    */
@@ -92,62 +92,62 @@ public:
    * @return Data type of the column
    */
   NdbDictionary::Column::Type getType() const;
-  
-  /**
-   * Get attribute (element) size in bytes. 
-   * 
-   * @note For arrays, the method only gives the size of an element.
-   *       The total attribute size is calculated by 
-   *       multiplying this value with the value 
-   *       returned by NdbRecAttr::arraySize.
-   *
-   * @return Attribute size in 32 bit unsigned int. 
-   */
-  Uint32 attrSize() const ;             
 
   /**
-   * Get array size of attribute. 
-   * For variable-sized arrays this method returns the 
+   * Get attribute (element) size in bytes.
+   *
+   * @note For arrays, the method only gives the size of an element.
+   *       The total attribute size is calculated by
+   *       multiplying this value with the value
+   *       returned by NdbRecAttr::arraySize.
+   *
+   * @return Attribute size in 32 bit unsigned int.
+   */
+  Uint32 attrSize() const ;
+
+  /**
+   * Get array size of attribute.
+   * For variable-sized arrays this method returns the
    * size of the attribute read.
    *
    * @return array size in 32 unsigned int.
    */
-  Uint32 arraySize() const ;            
+  Uint32 arraySize() const ;
   Uint32 getLength() const ;
-  
+
   /** @} *********************************************************************/
-  /** 
+  /**
    * @name Getting stored value
    * @{
    */
 
-  /** 
+  /**
    * Check if attribute value is NULL.
    *
-   * @return -1 = Not defined (Failure or 
+   * @return -1 = Not defined (Failure or
    *              NdbTransaction::execute not yet called).<br>
    *          0 = Attribute value is defined, but not equal to NULL.<br>
    *          1 = Attribute value is defined and equal to NULL.
    */
-  int isNULL() const; 
+  int isNULL() const;
 
   /**
    * Get value stored in NdbRecAttr object.
    *
    * @return  64 bit long value.
    */
-  Int64 int64_value() const;  
+  Int64 int64_value() const;
 
   /**
    * Get value stored in NdbRecAttr object.
    *
    * @return  32 bit int value.
-   */   
-  Int32 int32_value() const;  
+   */
+  Int32 int32_value() const;
 
   /**
    * Get value stored in NdbRecAttr object.
-   * 
+   *
    * @return  Medium value.
    */
   Int32 medium_value() const;
@@ -163,40 +163,40 @@ public:
    * Get value stored in NdbRecAttr object.
    *
    * @return  Char value.
-   */           
-  char  char_value() const;           
+   */
+  char  char_value() const;
 
   /**
    * Get value stored in NdbRecAttr object.
    *
    * @return  Int8 value.
-   */           
-  Int8  int8_value() const;           
+   */
+  Int8  int8_value() const;
 
   /**
    * Get value stored in NdbRecAttr object.
    *
    * @return  64 bit unsigned value.
    */
-  Uint64 u_64_value() const;          
+  Uint64 u_64_value() const;
 
   /**
    * Get value stored in NdbRecAttr object.
    *
    * @return  32 bit unsigned value.
    */
-  Uint32 u_32_value() const;          
+  Uint32 u_32_value() const;
 
   /**
    * Get value stored in NdbRecAttr object.
-   * 
+   *
    * @return  Unsigned medium value.
    */
   Uint32 u_medium_value() const;
 
   /**
    * Get value stored in NdbRecAttr object.
-   * 
+   *
    * @return  Unsigned short value.
    */
   Uint16 u_short_value() const;
@@ -205,14 +205,14 @@ public:
    * Get value stored in NdbRecAttr object.
    *
    * @return  Unsigned char value.
-   */   
-  Uint8 u_char_value() const;        
+   */
+  Uint8 u_char_value() const;
 
   /**
    * Get value stored in NdbRecAttr object.
    *
    * @return  Uint8 value.
-   */   
+   */
   Uint8 u_8_value() const;
 
   /**
@@ -220,56 +220,56 @@ public:
    *
    * @return  Float value.
    */
-  float float_value() const;         
+  float float_value() const;
 
   /**
    * Get value stored in NdbRecAttr object.
    *
    * @return  Double value.
    */
-  double double_value() const;        
-  
+  double double_value() const;
+
   /** @} *********************************************************************/
-  /** 
+  /**
    * @name Getting reference to stored value
    * @{
    */
 
   /**
-   * Get reference to attribute value. 
-   * 
+   * Get reference to attribute value.
+   *
    * Returns a char*-pointer to the value.
-   * The pointer is aligned appropriately for the data type.  
-   * The memory is released when Ndb::closeTransaction is executed 
+   * The pointer is aligned appropriately for the data type.
+   * The memory is released when Ndb::closeTransaction is executed
    * for the transaction which read the value.
    *
    * @note The memory is released by NDB API.
-   * 
+   *
    * @note The pointer to the attribute value stored in an NdbRecAttr
-   *       object (i.e. the pointer returned by aRef) is constant.  
-   *       This means that this method can be called anytime after 
+   *       object (i.e. the pointer returned by aRef) is constant.
+   *       This means that this method can be called anytime after
    *       NdbOperation::getValue has been called.
-   * 
-   * @return Pointer to attribute value.         
+   *
+   * @return Pointer to attribute value.
    */
-  char* aRef() const;                 
-                                
+  char* aRef() const;
+
   /** @} *********************************************************************/
-                             
+
   /**
    * Make a copy of RecAttr object including all data.
    *
    * @note  Copy needs to be deleted by application program.
    */
   NdbRecAttr * clone() const;
-  
+
   /**
    * Destructor
    *
-   * @note  You should only delete RecAttr-copies, 
+   * @note  You should only delete RecAttr-copies,
    *        i.e. objects that has been cloned.
    */
-  ~NdbRecAttr();    
+  ~NdbRecAttr();
 
 public:
 #ifndef DOXYGEN_SHOULD_SKIP_INTERNAL
@@ -334,14 +334,14 @@ NdbRecAttr::attrSize() const {
 
 inline
 Uint32
-NdbRecAttr::arraySize() const 
+NdbRecAttr::arraySize() const
 {
   return theArraySize;
 }
 
 inline
 Int32
-NdbRecAttr::int32_value() const 
+NdbRecAttr::int32_value() const
 {
   return *(Int32*)theRef;
 }
@@ -442,7 +442,7 @@ inline
 char*
 NdbRecAttr::aRef() const
 {
-  return (char*)theRef; 
+  return (char*)theRef;
 }
 
 inline

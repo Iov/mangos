@@ -36,12 +36,12 @@ public:
 			  NDB_SCANRECEIVER = 2,
 			  NDB_INDEX_OPERATION = 3
   };
-  
+
   NdbReceiver(Ndb *aNdb);
   int init(ReceiverType type, void* owner);
   void release();
   ~NdbReceiver();
-  
+
   Uint32 getId(){
     return m_id;
   }
@@ -49,17 +49,17 @@ public:
   ReceiverType getType(){
     return m_type;
   }
-  
+
   inline NdbTransaction * getTransaction();
   void* getOwner(){
     return m_owner;
   }
-  
+
   bool checkMagicNumber() const;
 
   inline void next(NdbReceiver* next_arg) { m_next = next_arg;}
   inline NdbReceiver* next() { return m_next; }
-  
+
   void setErrorCode(int);
 private:
   Uint32 theMagicNumber;
@@ -80,13 +80,13 @@ private:
   void calculate_batch_size(Uint32, Uint32, Uint32&, Uint32&, Uint32&);
 
   int execKEYINFO20(Uint32 info, const Uint32* ptr, Uint32 len);
-  int execTRANSID_AI(const Uint32* ptr, Uint32 len); 
+  int execTRANSID_AI(const Uint32* ptr, Uint32 len);
   int execTCOPCONF(Uint32 len);
   int execSCANOPCONF(Uint32 tcPtrI, Uint32 len, Uint32 rows);
   class NdbRecAttr* theFirstRecAttr;
   class NdbRecAttr* theCurrentRecAttr;
   class NdbRecAttr** m_rows;
-  
+
   Uint32 m_list_index; // When using multiple
   Uint32 m_current_row;
   Uint32 m_result_rows;
@@ -94,7 +94,7 @@ private:
 
   Uint32 m_expected_result_length;
   Uint32 m_received_result_length;
-  
+
   bool nextResult() const { return m_current_row < m_result_rows; }
   NdbRecAttr* copyout(NdbReceiver&);
 };
@@ -104,7 +104,7 @@ private:
 #endif
 
 inline
-bool 
+bool
 NdbReceiver::checkMagicNumber() const {
   bool retVal = (theMagicNumber == 0x11223344);
 #ifdef NDB_NO_DROPPED_SIGNAL

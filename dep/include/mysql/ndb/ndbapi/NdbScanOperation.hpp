@@ -23,7 +23,7 @@ class NdbResultSet;
 
 /**
  * @class NdbScanOperation
- * @brief Class of scan operations for use in transactions.  
+ * @brief Class of scan operations for use in transactions.
  */
 class NdbScanOperation : public NdbOperation {
 #ifndef DOXYGEN_SHOULD_SKIP_INTERNAL
@@ -51,14 +51,14 @@ public:
 
   /**
    * readTuples
-   * 
+   *
    * @param lock_mode Lock mode
    * @param scan_flags see @ref ScanFlag
    * @param parallel No of fragments to scan in parallel (0=max)
-   */ 
+   */
   virtual
-  int readTuples(LockMode lock_mode = LM_Read, 
-                 Uint32 scan_flags = 0, 
+  int readTuples(LockMode lock_mode = LM_Read,
+                 Uint32 scan_flags = 0,
 		 Uint32 parallel = 0,
 		 Uint32 batch = 0);
 
@@ -69,72 +69,72 @@ public:
    * @param batch No of rows to fetch from each fragment at a time
    * @param parallel No of fragments to scan in parallell
    * @note specifying 0 for batch and parallell means max performance
-   */ 
+   */
 #ifdef ndb_readtuples_impossible_overload
-  int readTuples(LockMode lock_mode = LM_Read, 
-		 Uint32 batch = 0, Uint32 parallel = 0, 
+  int readTuples(LockMode lock_mode = LM_Read,
+		 Uint32 batch = 0, Uint32 parallel = 0,
                  bool keyinfo = false, bool multi_range = false);
 #endif
-  
+
   inline int readTuples(int parallell){
     return readTuples(LM_Read, 0, parallell);
   }
-  
+
   inline int readTuplesExclusive(int parallell = 0){
     return readTuples(LM_Exclusive, 0, parallell);
   }
 #endif
-  
+
 #ifndef DOXYGEN_SHOULD_SKIP_INTERNAL
   NdbBlob* getBlobHandle(const char* anAttrName);
   NdbBlob* getBlobHandle(Uint32 anAttrId);
 #endif
 
   /**
-   * Get the next tuple in a scan transaction. 
-   * 
+   * Get the next tuple in a scan transaction.
+   *
    * After each call to nextResult
-   * the buffers and NdbRecAttr objects defined in 
-   * NdbOperation::getValue are updated with values 
-   * from the scanned tuple. 
+   * the buffers and NdbRecAttr objects defined in
+   * NdbOperation::getValue are updated with values
+   * from the scanned tuple.
    *
    * @param fetchAllowed  If set to false, then fetching is disabled
    * @param forceSend If true send will occur immediately (see @ref secAdapt)
    *
-   * The NDB API will contact the NDB Kernel for more tuples 
-   * when necessary to do so unless you set the fetchAllowed 
-   * to false. 
+   * The NDB API will contact the NDB Kernel for more tuples
+   * when necessary to do so unless you set the fetchAllowed
+   * to false.
    * This will force NDB to process any records it
-   * already has in it's caches. When there are no more cached 
+   * already has in it's caches. When there are no more cached
    * records it will return 2. You must then call nextResult
-   * with fetchAllowed = true in order to contact NDB for more 
+   * with fetchAllowed = true in order to contact NDB for more
    * records.
    *
-   * fetchAllowed = false is useful when you want to update or 
+   * fetchAllowed = false is useful when you want to update or
    * delete all the records fetched in one transaction(This will save a
-   *  lot of round trip time and make updates or deletes of scanned 
-   * records a lot faster). 
+   *  lot of round trip time and make updates or deletes of scanned
+   * records a lot faster).
    * While nextResult(false)
-   * returns 0 take over the record to another transaction. When 
-   * nextResult(false) returns 2 you must execute and commit the other 
-   * transaction. This will cause the locks to be transferred to the 
-   * other transaction, updates or deletes will be made and then the 
+   * returns 0 take over the record to another transaction. When
+   * nextResult(false) returns 2 you must execute and commit the other
+   * transaction. This will cause the locks to be transferred to the
+   * other transaction, updates or deletes will be made and then the
    * locks will be released.
    * After that, call nextResult(true) which will fetch new records and
-   * cache them in the NdbApi. 
-   * 
-   * @note  If you don't take over the records to another transaction the 
+   * cache them in the NdbApi.
+   *
+   * @note  If you don't take over the records to another transaction the
    *        locks on those records will be released the next time NDB Kernel
    *        is contacted for more records.
    *
    * @note  Please contact for examples of efficient scan
    *        updates and deletes.
-   * 
+   *
    * @note  See ndb/examples/ndbapi_scan_example for usage.
    *
-   * @return 
+   * @return
    * -  -1: if unsuccessful,<br>
-   * -   0: if another tuple was received, and<br> 
+   * -   0: if another tuple was received, and<br>
    * -   1: if there are no more tuples to scan.
    * -   2: if there are no more cached records in NdbApi
    */
@@ -187,13 +187,13 @@ public:
    * @return 0 on success or -1 on failure
    */
   int deleteCurrentTuple(NdbTransaction* takeOverTransaction);
-  
+
   /**
    * Restart scan with exactly the same
    *   getValues and search conditions
    */
   int restart(bool forceSend = false);
-  
+
 protected:
   NdbScanOperation(Ndb* aNdb,
                    NdbOperation::Type aType = NdbOperation::TableScan);
@@ -201,7 +201,7 @@ protected:
 
   int nextResultImpl(bool fetchAllowed = true, bool forceSend = false);
   virtual void release();
-  
+
   int close_impl(class TransporterFacade*, bool forceSend = false);
 
   // Overloaded methods from NdbCursorOperation
@@ -226,7 +226,7 @@ protected:
   int getFirstATTRINFOScan();
   int doSendScan(int ProcessorId);
   int prepareSendScan(Uint32 TC_ConnectPtr, Uint64 TransactionId);
-  
+
   int fix_receivers(Uint32 parallel);
   void reset_receivers(Uint32 parallel, Uint32 ordered);
   Uint32* m_array; // containing all arrays below
@@ -241,19 +241,19 @@ protected:
   Uint32 m_current_api_receiver;
   Uint32 m_api_receivers_count;
   NdbReceiver** m_api_receivers;  // These are currently used by api
-  
+
   /**
    * owned by receiver thread
    */
   Uint32 m_conf_receivers_count;  // NOTE needs mutex to access
   NdbReceiver** m_conf_receivers; // receive thread puts them here
-  
+
   /**
    * owned by receiver thread
    */
   Uint32 m_sent_receivers_count;  // NOTE needs mutex to access
   NdbReceiver** m_sent_receivers; // receive thread puts them here
-  
+
   int send_next_scan(Uint32 cnt, bool close, bool forceSend = false);
   void receiver_delivered(NdbReceiver*);
   void receiver_completed(NdbReceiver*);
@@ -261,7 +261,7 @@ protected:
 
   int getKeyFromKEYINFO20(Uint32* data, unsigned size);
   NdbOperation*	takeOverScanOp(OperationType opType, NdbTransaction*);
-  
+
   bool m_ordered;
   bool m_descending;
   Uint32 m_read_range_no;
@@ -270,28 +270,28 @@ protected:
 };
 
 inline
-NdbOperation* 
+NdbOperation*
 NdbScanOperation::lockCurrentTuple(){
   return lockCurrentTuple(m_transConnection);
 }
 
 inline
-NdbOperation* 
+NdbOperation*
 NdbScanOperation::lockCurrentTuple(NdbTransaction* takeOverTrans){
-  return takeOverScanOp(NdbOperation::ReadRequest, 
+  return takeOverScanOp(NdbOperation::ReadRequest,
 			takeOverTrans);
 }
 
 inline
-NdbOperation* 
+NdbOperation*
 NdbScanOperation::updateCurrentTuple(){
   return updateCurrentTuple(m_transConnection);
 }
 
 inline
-NdbOperation* 
+NdbOperation*
 NdbScanOperation::updateCurrentTuple(NdbTransaction* takeOverTrans){
-  return takeOverScanOp(NdbOperation::UpdateRequest, 
+  return takeOverScanOp(NdbOperation::UpdateRequest,
 			takeOverTrans);
 }
 
@@ -304,7 +304,7 @@ NdbScanOperation::deleteCurrentTuple(){
 inline
 int
 NdbScanOperation::deleteCurrentTuple(NdbTransaction * takeOverTrans){
-  void * res = takeOverScanOp(NdbOperation::DeleteRequest, 
+  void * res = takeOverScanOp(NdbOperation::DeleteRequest,
 			      takeOverTrans);
   if(res == 0)
     return -1;

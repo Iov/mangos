@@ -29,7 +29,7 @@ extern "C" {
  * is detected where it's necesssary to shutdown NDB.
  *
  * Example: When another node fails while a NDB node are performing
- * a system restart the node should be shutdown. This 
+ * a system restart the node should be shutdown. This
  * is kind of an error but the cause of the error is known
  * and a proper errormessage describing the problem should
  * be printed in error.log. It's therefore important to use
@@ -76,10 +76,10 @@ typedef ndbd_exit_classification_enum ndbd_exit_classification;
 #define NDBD_EXIT_NODE_NOT_DEAD               2309
 #define NDBD_EXIT_SR_REDOLOG                  2310
 #define NDBD_EXIT_SR_RESTARTCONFLICT          2311
-#define NDBD_EXIT_NO_MORE_UNDOLOG             2312 
-#define NDBD_EXIT_SR_UNDOLOG                  2313 
-#define NDBD_EXIT_SINGLE_USER_MODE            2314 
-#define NDBD_EXIT_NODE_DECLARED_DEAD          2315 
+#define NDBD_EXIT_NO_MORE_UNDOLOG             2312
+#define NDBD_EXIT_SR_UNDOLOG                  2313
+#define NDBD_EXIT_SINGLE_USER_MODE            2314
+#define NDBD_EXIT_NODE_DECLARED_DEAD          2315
 #define NDBD_EXIT_SR_SCHEMAFILE               2316
 #define NDBD_EXIT_MEMALLOC                    2327
 #define NDBD_EXIT_BLOCK_JBUFCONGESTION        2334

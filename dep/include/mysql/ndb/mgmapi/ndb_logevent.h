@@ -180,7 +180,7 @@ extern "C" {
   };
 
   /**
-   *   Log event severities (used to filter the cluster log, 
+   *   Log event severities (used to filter the cluster log,
    *   ndb_mgm_set_clusterlog_severity_filter(), and filter listening to events
    *   ndb_mgm_listen_event())
    */
@@ -448,7 +448,7 @@ extern "C" {
 	unsigned data9;
 	unsigned data10;
       } UNDORecordsExecuted;
-  
+
       /* NODERESTART */
       /** Log event specific data for for corresponding NDB_LE_ log event */
       struct {
@@ -615,10 +615,10 @@ extern "C" {
       /** Log event data @ref NDB_LE_BackupCompleted */
       struct {
 	unsigned starting_node;
-	unsigned backup_id; 
+	unsigned backup_id;
 	unsigned start_gci;
 	unsigned stop_gci;
-	unsigned n_records; 
+	unsigned n_records;
 	unsigned n_log_records;
 	unsigned n_bytes;
 	unsigned n_log_bytes;

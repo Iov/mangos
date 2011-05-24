@@ -34,20 +34,20 @@ class NdbIndexScanOperation : public NdbScanOperation {
 public:
   /**
    * readTuples using ordered index
-   * 
+   *
    * @param lock_mode Lock mode
    * @param scan_flags see @ref ScanFlag
    * @param parallel No of fragments to scan in parallel (0=max)
-   */ 
-  virtual int readTuples(LockMode lock_mode = LM_Read, 
-                         Uint32 scan_flags = 0, 
+   */
+  virtual int readTuples(LockMode lock_mode = LM_Read,
+                         Uint32 scan_flags = 0,
 			 Uint32 parallel = 0,
 			 Uint32 batch = 0);
 
 #ifndef DOXYGEN_SHOULD_SKIP_INTERNAL
   /**
    * readTuples using ordered index
-   * 
+   *
    * @param lock_mode Lock mode
    * @param batch     No of rows to fetch from each fragment at a time
    * @param parallel  No of fragments to scan in parallel
@@ -56,9 +56,9 @@ public:
    * @param read_range_no Enable reading of range no using @ref get_range_no
    * @returns 0 for success and -1 for failure
    * @see NdbScanOperation::readTuples
-   */ 
+   */
   inline int readTuples(LockMode lock_mode,
-                        Uint32 batch, 
+                        Uint32 batch,
                         Uint32 parallel,
                         bool order_by,
                         bool order_desc = false,
@@ -68,10 +68,10 @@ public:
     Uint32 scan_flags =
       (SF_OrderBy & -(Int32)order_by) |
       (SF_Descending & -(Int32)order_desc) |
-      (SF_ReadRangeNo & -(Int32)read_range_no) | 
+      (SF_ReadRangeNo & -(Int32)read_range_no) |
       (SF_KeyInfo & -(Int32)keyinfo) |
       (SF_MultiRange & -(Int32)multi_range);
-    
+
     return readTuples(lock_mode, scan_flags, parallel, batch);
   }
 #endif
@@ -136,16 +136,16 @@ public:
   int reset_bounds(bool forceSend = false);
 
   /**
-   * Marks end of a bound, 
+   * Marks end of a bound,
    *  used when batching index reads (multiple ranges)
    */
   int end_of_bound(Uint32 range_no);
-  
+
   /**
    * Return range no for current row
    */
   int get_range_no();
-  
+
   /**
    * Is current scan sorted
    */

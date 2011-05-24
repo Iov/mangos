@@ -32,8 +32,8 @@ typedef enum
 
 typedef enum
 {
-  ndberror_cl_none = 0,  
-  ndberror_cl_application = 1,  
+  ndberror_cl_none = 0,
+  ndberror_cl_application = 1,
   ndberror_cl_no_data_found = 2,
   ndberror_cl_constraint_violation = 3,
   ndberror_cl_schema_error = 4,
@@ -49,14 +49,14 @@ typedef enum
   ndberror_cl_unknown_error_code = 14,
   ndberror_cl_node_shutdown = 15,
   ndberror_cl_configuration = 16,
-  ndberror_cl_schema_object_already_exists = 17 
+  ndberror_cl_schema_object_already_exists = 17
 } ndberror_classification_enum;
 
 
 typedef struct {
 
   /**
-   * Error status.  
+   * Error status.
    */
   ndberror_status_enum status;
 
@@ -64,7 +64,7 @@ typedef struct {
    * Error type
    */
   ndberror_classification_enum classification;
-  
+
   /**
    * Error code
    */
@@ -76,7 +76,7 @@ typedef struct {
   const char * message;
 
   /**
-   * The detailed description.  This is extra information regarding the 
+   * The detailed description.  This is extra information regarding the
    * error which is not included in the error message.
    *
    * @note Is NULL when no details specified

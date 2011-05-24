@@ -49,7 +49,7 @@ char ndb_version_string_buf[NDB_VERSION_STRING_BUF_SZ];
 #define NDB_VERSION ndbGetOwnVersion()
 
 /**
- * Version id 
+ * Version id
  *
  *  Used by transporter and when communicating with
  *     managment server
@@ -67,4 +67,4 @@ char ndb_version_string_buf[NDB_VERSION_STRING_BUF_SZ];
 #define NDBD_QMGR_SINGLEUSER_VERSION_5 MAKE_VERSION(5,0,25)
 
 #endif
- 
+

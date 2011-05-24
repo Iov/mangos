@@ -67,7 +67,7 @@
 #define NDB_TYPE_DECIMALUNSIGNED        30
 
 #define NDB_TYPE_MAX                    31
- 
+
 /*
  * Table single user mode
  */

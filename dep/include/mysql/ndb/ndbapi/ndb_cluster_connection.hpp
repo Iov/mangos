@@ -51,8 +51,8 @@ public:
    * Connect to a cluster management server
    *
    * @param no_retries specifies the number of retries to attempt
-   *        in the event of connection failure; a negative value 
-   *        will result in the attempt to connect being repeated 
+   *        in the event of connection failure; a negative value
+   *        will result in the attempt to connect being repeated
    *        indefinitely
    *
    * @param retry_delay_in_seconds specifies how often retries should
@@ -60,7 +60,7 @@ public:
    *
    * @param verbose specifies if the method should print a report of its progess
    *
-   * @return 0 = success, 
+   * @return 0 = success,
    *         1 = recoverable error,
    *        -1 = non-recoverable error
    */

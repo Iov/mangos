@@ -32,8 +32,8 @@
  *
  * Each MGM API function needs a management server handle
  * of type @ref NdbMgmHandle.
- * This handle is created by calling the function 
- * function ndb_mgm_create_handle() and freed by calling 
+ * This handle is created by calling the function
+ * function ndb_mgm_create_handle() and freed by calling
  * ndb_mgm_destroy_handle().
  *
  * A function can return any of the following:
@@ -46,7 +46,7 @@
  *     The returned value should <em>not</em> be freed.
  *
  * Error conditions can be identified by using the appropriate
- * error-reporting functions ndb_mgm_get_latest_error() and 
+ * error-reporting functions ndb_mgm_get_latest_error() and
  * @ref ndb_mgm_error.
  *
  * Here is an example using the MGM API (without error handling for brevity's sake).
@@ -54,7 +54,7 @@
  *   NdbMgmHandle handle= ndb_mgm_create_handle();
  *   ndb_mgm_connect(handle,0,0,0);
  *   struct ndb_mgm_cluster_state *state= ndb_mgm_get_status(handle);
- *   for(int i=0; i < state->no_of_nodes; i++) 
+ *   for(int i=0; i < state->no_of_nodes; i++)
  *   {
  *     struct ndb_mgm_node_state *node_state= &state->node_states[i];
  *     printf("node with ID=%d ", node_state->node_id);
@@ -78,7 +78,7 @@
  * log event also has a level (0-15) associated with it.
  *
  * Which log events that come out is controlled with ndb_mgm_listen_event(),
- * ndb_mgm_set_clusterlog_loglevel(), and 
+ * ndb_mgm_set_clusterlog_loglevel(), and
  * ndb_mgm_set_clusterlog_severity_filter().
  *
  * Below is an example of how to listen to events related to backup.
@@ -234,7 +234,7 @@ extern "C" {
     NDB_MGM_COULD_NOT_CONNECT_TO_SOCKET = 1011,
     /** Could not bind local address */
     NDB_MGM_BIND_ADDRESS = 1012,
-    
+
     /* Alloc node id failures */
     /** Generic error, retry may succeed */
     NDB_MGM_ALLOCID_ERROR = 1101,
@@ -314,7 +314,7 @@ extern "C" {
    *   returned by ndb_mgm_get_status().
    *
    *   @note <var>node_status</var>, <var>start_phase</var>,
-   *         <var>dynamic_id</var> 
+   *         <var>dynamic_id</var>
    *         and <var>node_group</var> are relevant only for database nodes,
    *         i.e. <var>node_type</var> == @ref NDB_MGM_NODE_TYPE_NDB.
    */
@@ -328,7 +328,7 @@ extern "C" {
     /** Start phase.
      *
      *  @note Start phase is only valid if the <var>node_type</var> is
-     *        NDB_MGM_NODE_TYPE_NDB and the <var>node_status</var> is 
+     *        NDB_MGM_NODE_TYPE_NDB and the <var>node_status</var> is
      *        NDB_MGM_NODE_STATUS_STARTING
      */
     int start_phase;
@@ -339,7 +339,7 @@ extern "C" {
     int node_group;
     /** Internal version number*/
     int version;
-    /** Number of times node has connected or disconnected to the 
+    /** Number of times node has connected or disconnected to the
      *  management server
      */
     int connect_count;
@@ -355,7 +355,7 @@ extern "C" {
   };
 
   /**
-   *   State of all nodes in the cluster; returned from 
+   *   State of all nodes in the cluster; returned from
    *   ndb_mgm_get_status()
    */
   struct ndb_mgm_cluster_state {
@@ -413,7 +413,7 @@ extern "C" {
    */
 
   /**
-   *  Get the most recent error associated with the management server whose handle 
+   *  Get the most recent error associated with the management server whose handle
    *  is used as the value of <var>handle</var>.
    *
    * @param   handle        Management handle
@@ -530,7 +530,7 @@ extern "C" {
   /**
    * Gets the connectstring used for a connection
    *
-   * @note This function returns the default connectstring if no call to 
+   * @note This function returns the default connectstring if no call to
    *       ndb_mgm_set_connectstring() has been performed. Also, the
    *       returned connectstring may be formatted differently.
    *
@@ -862,7 +862,7 @@ extern "C" {
    *                        ndb_mgm_clusterlog_level;
    *                        for example the "error" level is stored in position
    *                        [NDB_MGM_EVENT_SEVERITY_ERROR].
-   *                        The first element [NDB_MGM_EVENT_SEVERITY_ON] in 
+   *                        The first element [NDB_MGM_EVENT_SEVERITY_ON] in
    *                        the vector signals
    *                        whether the cluster log
    *                        is disabled or enabled.
@@ -885,7 +885,7 @@ extern "C" {
 				      int level,
 				      struct ndb_mgm_reply* reply);
   /**
-   * get log category and levels 
+   * get log category and levels
    *
    * @param   handle        NDB management handle.
    * @return                A vector of twelve elements,

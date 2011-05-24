@@ -176,7 +176,7 @@
  */
 #define CFG_DB_STOP_ON_ERROR_INSERT   1
 
-#define CFG_TYPE_OF_SECTION           999                 
+#define CFG_TYPE_OF_SECTION           999
 #define CFG_SECTION_SYSTEM            1000
 #define CFG_SECTION_NODE              2000
 #define CFG_SECTION_CONNECTION        3000

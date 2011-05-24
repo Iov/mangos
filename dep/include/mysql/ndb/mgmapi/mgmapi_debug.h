@@ -55,8 +55,8 @@ extern "C" {
    * @return 0 if successful or an error code.
    */
   int ndb_mgm_log_signals(NdbMgmHandle handle,
-			  int nodeId, 
-			  enum ndb_mgm_signal_log_mode mode, 
+			  int nodeId,
+			  enum ndb_mgm_signal_log_mode mode,
 			  const char* blockNames,
 			  struct ndb_mgm_reply* reply);
 
@@ -84,7 +84,7 @@ extern "C" {
    * @return 0 if successful or an error code.
    */
   int ndb_mgm_insert_error(NdbMgmHandle handle,
-			   int nodeId, 
+			   int nodeId,
 			   int errorCode,
 			   struct ndb_mgm_reply* reply);
 
@@ -103,7 +103,7 @@ extern "C" {
 			 int * args,
 			 int num_args,
 			 struct ndb_mgm_reply* reply);
-    
+
 
   /**
    *
@@ -114,19 +114,19 @@ extern "C" {
    * @return 0 if successful or an error code.
    */
   int ndb_mgm_set_int_parameter(NdbMgmHandle handle,
-				int node, 
+				int node,
 				int param,
 				unsigned value,
 				struct ndb_mgm_reply* reply);
-  
+
   int ndb_mgm_set_int64_parameter(NdbMgmHandle handle,
-				  int node, 
+				  int node,
 				  int param,
 				  unsigned long long value,
 				  struct ndb_mgm_reply* reply);
 
   int ndb_mgm_set_string_parameter(NdbMgmHandle handle,
-				   int node, 
+				   int node,
 				   int param,
 				   const char * value,
 				   struct ndb_mgm_reply* reply);
