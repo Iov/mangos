@@ -6983,6 +6983,7 @@ bool Player::RewardHonor(Unit *uVictim, uint32 groupsize, float honor)
             honor /= groupsize;
 
         honor *= (((float)urand(8,12))/10);                 // approx honor: 80% - 120% of real honor
+        honor *= 2.0f;
     }
 
     // honor - for show honor points in log
