@@ -2303,6 +2303,26 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
             else
                 FillAreaTargets(targetUnitMap, radius, PUSH_DEST_CENTER, SPELL_TARGETS_AOE_DAMAGE);
 
+            // Ghoul Taunt (Army of the Dead) - exclude Player and WorldBoss targets 
+            if (m_spellInfo->Id == 43263) 
+            { 
+                if (!targetUnitMap.empty() ) 
+                { 
+                   for (UnitList::iterator itr = targetUnitMap.begin(); itr != targetUnitMap.end();) 
+                   { 
+                        Creature *pTmp = (Creature*)(*itr); 
+                        if ( ((*itr) && (*itr)->GetTypeId() == TYPEID_PLAYER) || (pTmp && pTmp->isWorldBoss()) ) 
+                        { 
+                            targetUnitMap.erase(itr); 
+                            targetUnitMap.sort(); 
+                            itr = targetUnitMap.begin(); 
+                            continue; 
+                        } 
+                        itr++; 
+                    } 
+                } 
+            }
+
             // Starfall - exclude stealthed targets
             if (m_spellInfo->Id == 50286)
             {
@@ -2746,6 +2766,11 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
             else
                 FillAreaTargets(targetUnitMap, radius, PUSH_DEST_CENTER, SPELL_TARGETS_FRIENDLY);
             break;
+            // Mana Detonation (Kel'Thuzad in Naxxramas) - should not damage caster 
+            if (m_spellInfo->Id == 27820) 
+            { 
+               targetUnitMap.remove(m_caster); 
+            }
         // TARGET_SINGLE_PARTY means that the spells can only be casted on a party member and not on the caster (some seals, fire shield from imp, etc..)
         case TARGET_SINGLE_PARTY:
         {
@@ -5198,6 +5223,9 @@ void Spell::CastPreCastSpells(Unit* target)
 
 SpellCastResult Spell::CheckCast(bool strict)
 {
+    // Ebonweave 
+    if(m_spellInfo->Id==56002 && m_caster->GetAreaId()==4167) return SPELL_CAST_OK;
+
     // check cooldowns to prevent cheating (ignore passive spells, that client side visual only)
     if (m_caster->GetTypeId()==TYPEID_PLAYER && !(m_spellInfo->Attributes & SPELL_ATTR_PASSIVE) &&
         ((Player*)m_caster)->HasSpellCooldown(m_spellInfo->Id))
