@@ -2112,18 +2112,6 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
 
                     return;
                 }
-                case 48046:                                 // Use Camera
-                {
-                    if (!unitTarget)
-                        return;
-
-                    // No despawn expected, nor any change in dynamic flags/other flags.
-                    // Need internal way to track if credit has been given for this object.
-
-                    // Iron Dwarf Snapshot Credit
-                    m_caster->CastSpell(m_caster, 48047, true, m_CastItem, NULL, unitTarget->GetObjectGuid());
-                    return;
-                }
                 case 48790:                                 // Neltharion's Flame
                 {
                     if (!unitTarget)
@@ -5033,15 +5021,15 @@ void Spell::EffectEnergize(SpellEffectIndex eff_idx)
     if(unitTarget->GetMaxPower(power) == 0)
         return;
 
-    //Alechmist's Stone effect 
-    if (m_spellInfo->SpellFamilyName == SPELLFAMILY_POTION) 
-    { 
-       if (power == POWER_MANA) 
-       { 
-          SpellAuraHolder* alcStoneEff = caster->GetSpellAuraHolder(17619); 
-          if (alcStoneEff) 
-             damage *= 1.40f; 
-       } 
+    //Alechmist's Stone effect
+    if (m_spellInfo->SpellFamilyName == SPELLFAMILY_POTION)
+    {
+       if (power == POWER_MANA)
+       {
+          SpellAuraHolder* alcStoneEff = m_caster->GetSpellAuraHolder(17619);
+          if (alcStoneEff)
+             damage *= 1.40f;
+       }
     }
 
     m_caster->EnergizeBySpell(unitTarget, m_spellInfo->Id, damage, power);

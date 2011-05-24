@@ -2303,25 +2303,26 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
             else
                 FillAreaTargets(targetUnitMap, radius, PUSH_DEST_CENTER, SPELL_TARGETS_AOE_DAMAGE);
 
-            // Ghoul Taunt (Army of the Dead) - exclude Player and WorldBoss targets 
-            if (m_spellInfo->Id == 43263) 
-            { 
-                if (!targetUnitMap.empty() ) 
-                { 
-                   for (UnitList::iterator itr = targetUnitMap.begin(); itr != targetUnitMap.end();) 
-                   { 
-                        Creature *pTmp = (Creature*)(*itr); 
-                        if ( ((*itr) && (*itr)->GetTypeId() == TYPEID_PLAYER) || (pTmp && pTmp->isWorldBoss()) ) 
-                        { 
-                            targetUnitMap.erase(itr); 
-                            targetUnitMap.sort(); 
-                            itr = targetUnitMap.begin(); 
-                            continue; 
-                        } 
-                        itr++; 
-                    } 
-                } 
+            // Ghoul Taunt (Army of the Dead) - exclude Player and WorldBoss targets
+            if (m_spellInfo->Id == 43263)
+            {
+                if (!targetUnitMap.empty() )
+                {
+                    for (UnitList::iterator itr = targetUnitMap.begin(); itr != targetUnitMap.end();)
+                    {
+                        Creature *pTmp = (Creature*)(*itr);
+                        if ( ((*itr) && (*itr)->GetTypeId() == TYPEID_PLAYER) || (pTmp && pTmp->IsWorldBoss()) )
+                        {
+                            targetUnitMap.erase(itr);
+                            targetUnitMap.sort();
+                            itr = targetUnitMap.begin();
+                            continue;
+                        }
+                        itr++;
+                    }
+                }
             }
+            break;
 
             // Starfall - exclude stealthed targets
             if (m_spellInfo->Id == 50286)
