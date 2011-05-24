@@ -2630,6 +2630,15 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
                     unitTarget->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_OOC_NOT_ATTACKABLE);
                     return;
                 }
+                case 62907:                                 // Freyas Wall  
+                {  
+                    if (!unitTarget)  
+                        return;  
+ 
+                    for (int i= 0; i < 3;++i)  
+                        unitTarget->CastSpell(unitTarget, 62947, true);  
+                    return;  
+                }
                 case 64385:                                 // Spinning (from Unusual Compass)
                 {
                     m_caster->SetFacingTo(frand(0, M_PI_F*2), true);
@@ -8178,6 +8187,16 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
 
                     return;
                 }
+                case 62705:                                 // Auto-repair  
+                {  
+                    if (!unitTarget)  
+                        return;
+						
+                    unitTarget->SetHealth(unitTarget->GetMaxHealth());  
+                    if (VehicleKit* vehicle = unitTarget->GetVehicleKit())  
+                        if (Unit* seat = vehicle->GetPassenger(1))  
+                            seat->ModifyPower(POWER_ENERGY,50);  
+                }
                 case 69200:                                 // Raging Spirit
                 {
                     if (!unitTarget)
@@ -8303,6 +8322,15 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
                     unitTarget->CastSpell(m_caster, 62708, true); // Control Vehicle aura
                     m_caster->CastSpell(unitTarget, (m_spellInfo->Id == 62707) ? 62717 : 63477, true); // DoT/Immunity
                     break;
+                }
+                case 65044:                                 // Flames Ulduar  
+                {  
+                    if (!unitTarget)  
+                        return;  
+ 
+                    if (unitTarget->HasAura(62297))  
+                        unitTarget->RemoveAurasDueToSpell(62297);   // Remove Hodir's Fury  
+                    break;  
                 }
                 case 65917:                                 // Magic Rooster 
                 { 
