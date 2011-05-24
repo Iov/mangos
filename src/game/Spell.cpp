@@ -1864,10 +1864,14 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
                 case 38794:                                 // Murmur's Touch (h)
                 case 48278:                                 // Paralyze (Utgarde Pinnacle)
                 case 50988:                                 // Glare of the Tribunal (Halls of Stone)
-                case 55479:                                 // Force Obedience (Naxxramas)
                 case 59870:                                 // Glare of the Tribunal (h) (Halls of Stone)
-                case 61916:                                 // Lightning Whirl (10 man)
-                case 63482:                                 // Lightning Whirl (25 man)
+                case 68950:                                 // Fear (ICC: Forge of Souls)
+                case 63018:                                 // Searing Light nonhero
+                case 65121:                                 // Searing Light hero
+                case 63024:                                 // XT002's Gravitiy Bomb
+                case 64234:                                 // XT002's Gravitiy Bomb (h)
+                case 63545:                                 // Icicle Hodir(trigger spell from 62227)
+                case 55479:                                 // Force Obedience (Naxxramas - Razovius encounter)
                 case 63387:                                 // Rapid Burst
                 case 64531:                                 // Rapid Burst (h)
                 case 66336:                                 // Mistress' Kiss (Trial of the Crusader, ->
@@ -1876,24 +1880,31 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
                 case 67281:
                 case 67282:
                 case 67283:
+                case 62166:                                 // StoneGrip nh
                 case 62374:                                 // Pursued Ulduar Leviathan
                 case 65950:                                 // Touch of Light
                 case 67296:
                 case 67297:
                 case 67298:
-                case 68950:                                 // Fear
+                 case 73058:                                 // Blood Nova
+                case 72378:                                 // Blood Nova
+                case 71340:                                 // Pact of darkfallen (hack for script work)
                 case 72385:                                 // Boiling Blood (10N)
                 case 72442:                                 // Boiling Blood (10H)
-                case 73058:                                 // Blood Nova
-                case 72378:                                 // Blood Nova
+                case 66152:                                 // Bullet Foced Cast (Trial of the Crusader, ->
+                case 66153:                                 // -> Twin Valkyr encounter, 10 and 25 mode)
+                case 66339:                                 // Summon Scarab (Trial of the Crusader, Anub'arak encounter)
                     unMaxTargets = 1;
                     break;
+                case 62476:                                 // Icicle (Hodir 10man)
                 case 28542:                                 // Life Drain
                 case 66013:                                 // Penetrating Cold (10 man)
                 case 68509:                                 // Penetrating Cold (10 man heroic)
                 case 69278:                                 // Gas spore - 10
                 case 71336:                                 // Pact of the Darkfallen
                 case 71390:                                 // Pact of the Darkfallen
+                case 66332:                                 // Nerubian Burrower (Trial of the Crusader, ->
+                case 67755:                                 // -> Anub'arak encounter, 10 and 10 heroic)
                     unMaxTargets = 2;
                     break;
                 case 28796:                                 // Poison Bolt Volley
@@ -1901,9 +1912,21 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
                 case 31298:                                 // Sleep
                 case 39992:                                 // Needle Spine Targeting (Warlord Najentus)
                 case 51904:                                 // Limiting the count of Summoned Ghouls
+                case 63981:                                 // StoneGrip H
                 case 54522:
+                case 62477:                                 // Icicle (Hodir 25man)
+                case 61693:                                 // Arcane Storm (Malygos) (N)
+                case 60936:                                 // Surge of Power (h) (Malygos)
                     unMaxTargets = 3;
                     break;
+                case 61916:                                 // Lightning Whirl (Stormcaller Brundir - Ulduar
+                    unMaxTargets = urand(2, 3);
+                    break;
+                case 63482:                                 // Lightning Whirl (h) (Stormcaller Brundir - Ulduar)
+                    unMaxTargets = urand(3, 6);
+                    break;
+                case 67756:                                 // Nerubian Burrower (Trial of the Crusader, ->
+                case 67757:                                 // -> Anub'arak encounter, 25 and 25 heroic)
                 case 71221:                                 // Gas spore - 25
                     unMaxTargets = 4;
                     break;
@@ -1911,11 +1934,14 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
                 case 42005:                                 // Bloodboil TODO: need to be 5 targets(players) furthest away from caster
                 case 55665:                                 // Life Drain (h)
                 case 58917:                                 // Consume Minions
+                case 64604:                                 // Nature Bomb Freya
                 case 67076:                                 // Mistress' Kiss (Trial of the Crusader, ->
                 case 67078:                                 // -> Lord Jaraxxus encounter, 25 and 25 heroic)
                 case 67700:                                 // Penetrating Cold (25 man)
                 case 68510:                                 // Penetrating Cold (25 man, heroic)
                     unMaxTargets = 5;
+                case 61694:                                 // Arcane Storm(H) (25 man) (Malygos)
+                    unMaxTargets = 7;
                     break;
                 case 72441:                                 // Boiling Blood (25N)
                 case 72443:                                 // Boiling Blood (25H)
@@ -1928,6 +1954,14 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
                 case 25991:                                 // Poison Bolt Volley (Pincess Huhuran)
                     unMaxTargets = 15;
                     break;
+                case 62240:                                 // Solar Flare
+                case 62920:                                 // Solar Flare (h)
+                {
+                    if(Aura *pAura = m_caster->GetAura(62251, EFFECT_INDEX_0))
+                    unMaxTargets = pAura->GetStackAmount();
+                    else unMaxTargets = 1;
+                    break;
+                }
                 case 69075:                                 // Bone Storm
                 case 70834:                                 // Bone Storm
                 case 70835:                                 // Bone Storm
@@ -1945,7 +1979,7 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
                     radius = 50;
                     break;
                 case 72350:                                 // Fury of Frostmourne
-                case 72351:                                 // Fury of Frostmourne 
+                case 72351:                                 // Fury of Frostmourne
                     radius = 300;
                     break;
                 case 72754:                                 // Defile. Radius depended from scale.
@@ -1954,6 +1988,19 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
                 case 73710:                                 // Defile 25H
                     if (Unit* realCaster = GetAffectiveCaster())
                         radius = realCaster->GetFloatValue(OBJECT_FIELD_SCALE_X) * 6;
+                   break;
+                case 66881:                                 // Slime Pool (Acidmaw & Dreadscale encounter)
+                case 67638:                                 // (Trial of the Crusader, all difficulties)
+                case 67639:                                 // ----- // -----
+                case 67640:                                 // ----- // -----
+                    if (m_caster->HasAura(66882))
+                    {
+                        if (Aura* pAura = m_caster->GetAura(66882, EFFECT_INDEX_0))
+                            radius = 0.5*(60-(pAura->GetAuraDuration()/IN_MILLISECONDS));
+                    }
+                    break;
+                case 67732:                                 // Destroy all Frost Patches (Trial of the Crusader, Anub'arak)
+                    radius = 9.0f;
                     break;
                 default:
                     break;
