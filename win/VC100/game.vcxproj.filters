@@ -466,6 +466,12 @@
     <ClCompile Include="..\..\src\game\CharacterDatabaseCleaner.cpp">
       <Filter>Tool</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\game\PathFinder.cpp">
+      <Filter>Motion generators</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\game\MoveMap.cpp">
+      <Filter>World/Handlers</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\src\game\Camera.cpp">
       <Filter>Object</Filter>
     </ClCompile>
@@ -987,9 +993,13 @@
     <ClInclude Include="..\..\src\game\CharacterDatabaseCleaner.h">
       <Filter>Tool</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\game\PathFinder.h">
+      <Filter>Motion generators</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\src\game\Camera.h">
       <Filter>Object</Filter>
     </ClInclude>
+<<<<<<< HEAD
     <ClInclude Include="..\..\src\game\ChatLexicsCutter.h">
       <Filter>Object</Filter>
     </ClInclude>
@@ -1002,6 +1012,8 @@
     <ClInclude Include="..\..\src\game\PathFinder.h">
       <Filter>Motion generators</Filter>
 	</ClInclude>
+=======
+>>>>>>> 7702c54fef0cef4a327a3730ee9abd7ad5530c76
     <ClInclude Include="..\..\src\game\MoveMap.h">
       <Filter>World/Handlers</Filter>
     </ClInclude>
