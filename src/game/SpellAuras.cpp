@@ -139,7 +139,7 @@ pAuraHandler AuraHandler[TOTAL_AURAS]=
     &Aura::HandleModRegen,                                  // 84 SPELL_AURA_MOD_REGEN
     &Aura::HandleModPowerRegen,                             // 85 SPELL_AURA_MOD_POWER_REGEN
     &Aura::HandleChannelDeathItem,                          // 86 SPELL_AURA_CHANNEL_DEATH_ITEM
-    &Aura::HandleNoImmediateEffect,                         // 87 SPELL_AURA_MOD_DAMAGE_PERCENT_TAKEN implemented in Unit::MeleeDamageBonusTaken and Unit::SpellDamageBonusTaken
+    &Aura::HandleModDamagePctTaken,                         // 87 SPELL_AURA_MOD_DAMAGE_PERCENT_TAKEN implemented in Unit::MeleeDamageBonusTaken and Unit::SpellDamageBonusTaken
     &Aura::HandleNoImmediateEffect,                         // 88 SPELL_AURA_MOD_HEALTH_REGEN_PERCENT implemented in Player::RegenerateHealth
     &Aura::HandlePeriodicDamagePCT,                         // 89 SPELL_AURA_PERIODIC_DAMAGE_PERCENT
     &Aura::HandleUnused,                                    // 90 unused (3.0.8a-3.2.2a) old SPELL_AURA_MOD_RESIST_CHANCE
@@ -1056,8 +1056,10 @@ void Aura::HandleAddModifier(bool apply, bool Real)
 
     if (apply)
     {
+        SpellEntry const* spellProto = GetSpellProto();
+
         // Add custom charges for some mod aura
-        switch (GetSpellProto()->Id)
+        switch (spellProto->Id)
         {
             case 17941:                                     // Shadow Trance
             case 22008:                                     // Netherwind Focus
@@ -1082,6 +1084,13 @@ void Aura::HandleAddModifier(bool apply, bool Real)
             // prevent expire spell mods with (charges > 0 && m_stackAmount > 1)
             // all this spell expected expire not at use but at spell proc event check
             GetSpellProto()->StackAmount > 1 ? 0 : GetHolder()->GetAuraCharges());
+
+        // Everlasting Affliction, overwrite wrong data, if will need more better restore support of spell_affect table
+        if (spellProto->SpellFamilyName == SPELLFAMILY_WARLOCK && spellProto->SpellIconID == 3169)
+        {
+            m_spellmod->mask = UI64LIT(0x0000010000000002); // Corruption and Unstable Affliction
+            m_spellmod->mask2 = 0x00000000;
+        }
     }
 
     ((Player*)GetTarget())->AddSpellMod(m_spellmod, apply);
@@ -2664,6 +2673,16 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
 
                 if (pSummon && pCaster)
                     pSummon->GetMotionMaster()->MovePoint(0, pCaster->GetPositionX(), pCaster->GetPositionY(), pCaster->GetPositionZ());
+
+                return;
+            }
+            case 43681:                                     // Inactive
+            {
+                if (!target || target->GetTypeId() != TYPEID_PLAYER || m_removeMode != AURA_REMOVE_BY_EXPIRE)
+                    return;
+
+                if (target->GetMap()->IsBattleGround())
+                    ((Player*)target)->LeaveBattleground();
 
                 return;
             }
@@ -5687,6 +5706,13 @@ void Aura::HandleAuraPeriodicDummy(bool apply, bool Real)
                         target->CastSpell(caster, (spell->Id == 62717) ? 62836 : 63536, true);
 
                     break;
+                }
+                case 63276:                                   // Mark of the Faceless (General Vezax - Ulduar)
+                {
+                    Unit *caster = GetCaster();
+                    if (caster && target)
+                        caster->CastCustomSpell(target, 63278, 0, &(spell->EffectBasePoints[0]), 0, false, 0, 0, caster->GetObjectGuid() , spell);
+                    return;
                 }
             }
         }
@@ -9835,17 +9861,22 @@ void SpellAuraHolder::HandleSpellSpecificBoosts(bool apply)
                             caster->RemoveAurasDueToSpell(34027);
                     return;
                 }
+                case 62692:                                 // Aura of Despair (General Vezax - Ulduar)
+                {
+                    spellId1 = 64848;
+                    break;
+                }
+                case 63277:                                 // Shadow Crash (General Vezax - Ulduar)
+                {   
+                    spellId1 = 65269;
+                    break;
+                }
                 case 70867:                                 // Soul of Blood Qween
                 case 71473:
                 case 71532:
                 case 71533:
                 {
                     spellId1 = 70871;
-                }
-                case 62692:                                 // Aura of Despair
-                {
-                    spellId1 = 64848;
-                    break;
                 }
                 case 71905:                                 // Soul Fragment
                 {
@@ -9953,7 +9984,7 @@ void SpellAuraHolder::HandleSpellSpecificBoosts(bool apply)
                     if (!apply)
                     {
                         Unit* caster = GetCaster();
-                        if (caster || caster->HasAura(70752))   // Item - Mage T10 2P Bonus
+                        if (caster && caster->HasAura(70752))   // Item - Mage T10 2P Bonus
                         {
                             cast_at_remove = true;
                             spellId1 = 70753;                   // Pushing the Limit
@@ -11078,4 +11109,46 @@ void Aura::HandleAuraStopNaturalManaRegen(bool apply, bool real)
         target->RemoveFlag(UNIT_FIELD_FLAGS_2, UNIT_FLAG2_REGENERATE_POWER);
     else
         target->SetFlag(UNIT_FIELD_FLAGS_2, UNIT_FLAG2_REGENERATE_POWER);
+}
+
+void Aura::HandleModDamagePctTaken(bool Apply, bool Real)
+{
+    if (!Real)
+        return;
+
+    Unit* target = GetTarget();
+    Unit* caster = GetCaster();
+
+    if(!target || !caster)
+        return;
+
+    if (Apply)
+    {
+        // Icebound Fortitude
+        if (GetSpellProto()->SpellFamilyName == SPELLFAMILY_DEATHKNIGHT && GetSpellProto()->SpellFamilyFlags & 0x00100000)
+        {
+            if (caster->GetTypeId() == TYPEID_PLAYER)
+            {
+                int32 value = -GetModifier()->m_amount;
+
+                // Glyph of Icebound Fortitude
+                if (Aura * aur = caster->GetAura(58625, EFFECT_INDEX_0))
+                    value = aur->GetModifier()->m_amount;
+
+                uint32 defval = uint32(((Player*)caster)->GetSkillValue(SKILL_DEFENSE) + ((Player*)caster)->GetRatingBonusValue(CR_DEFENSE_SKILL));
+                if (defval > 400)
+                    value += int32((defval - 400) * 0.075);
+
+                m_modifier.m_amount = -value;
+            }
+        }
+        // Hand of Salvation
+        else if (GetSpellProto()->SpellFamilyName == SPELLFAMILY_PALADIN && GetSpellProto()->SpellFamilyFlags & 0x00000100)
+        {
+            //Glyph of Salvation
+            if (caster->GetObjectGuid() == target->GetObjectGuid())
+                if (Aura * aur = caster->GetAura(63225, EFFECT_INDEX_0))
+                    m_modifier.m_amount = -aur->GetModifier()->m_amount;
+        }
+    }
 }

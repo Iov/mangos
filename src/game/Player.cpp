@@ -3826,6 +3826,16 @@ void Player::RemoveArenaSpellCooldowns()
             RemoveSpellCooldown(itr->first, true);
         }
     }
+
+    if (Pet *pet = GetPet())
+    {
+        // notify player
+        for (CreatureSpellCooldowns::const_iterator itr = pet->m_CreatureSpellCooldowns.begin(); itr != pet->m_CreatureSpellCooldowns.end(); ++itr)
+            SendClearCooldown(itr->first, pet);
+
+        // actually clear cooldowns
+        pet->m_CreatureSpellCooldowns.clear();
+    }
 }
 
 void Player::RemoveAllSpellCooldown()
@@ -20608,8 +20618,9 @@ bool Player::CanReportAfkDueToLimit()
 ///This player has been blamed to be inactive in a battleground
 void Player::ReportedAfkBy(Player* reporter)
 {
-    BattleGround *bg = GetBattleGround();
-    if(!bg || bg != reporter->GetBattleGround() || GetTeam() != reporter->GetTeam())
+    BattleGround* bg = GetBattleGround();
+    // Battleground also must be in progress!
+    if (!bg || bg != reporter->GetBattleGround() || GetTeam() != reporter->GetTeam() || bg->GetStatus() != STATUS_IN_PROGRESS)
         return;
 
     // check if player has 'Idle' or 'Inactive' debuff

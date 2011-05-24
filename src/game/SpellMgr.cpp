@@ -699,6 +699,8 @@ bool IsPositiveEffect(SpellEntry const *spellproto, SpellEffectIndex effIndex)
         case 43017:                                         // Amplify Magic - Rank 7
         case 61716:                                         // Rabbit Costume
         case 61734:                                         // Noblegarden Bunny
+        case 67398:                                         // Zergling Periodic Effect
+        case 67369:                                         // Grunty Focus
             return true;
         default:
             break;
