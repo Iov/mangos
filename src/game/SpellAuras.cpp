@@ -5707,6 +5707,13 @@ void Aura::HandleAuraPeriodicDummy(bool apply, bool Real)
 
                     break;
                 }
+                case 63276:                                   // Mark of the Faceless (General Vezax - Ulduar)
+                {
+                    Unit *caster = GetCaster();
+                    if (caster && target)
+                        caster->CastCustomSpell(target, 63278, 0, &(spell->EffectBasePoints[0]), 0, false, 0, 0, caster->GetObjectGuid() , spell);
+                    return;
+                }
             }
         }
         case SPELLFAMILY_ROGUE:
@@ -9854,9 +9861,14 @@ void SpellAuraHolder::HandleSpellSpecificBoosts(bool apply)
                             caster->RemoveAurasDueToSpell(34027);
                     return;
                 }
-                case 62692:                                 // Aura of Despair
+                case 62692:                                 // Aura of Despair (General Vezax - Ulduar)
                 {
                     spellId1 = 64848;
+                    break;
+                }
+                case 63277:                                 // Shadow Crash (General Vezax - Ulduar)
+                {   
+                    spellId1 = 65269;
                     break;
                 }
                 case 70867:                                 // Soul of Blood Qween
