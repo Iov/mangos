@@ -3425,11 +3425,21 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
             }
             break;
         }
+        case TARGET_UNK_92: 
+        { 
+            if (Unit *unitTarget = m_targets.getUnitTarget()) 
+                targetUnitMap.push_back(unitTarget); 
+            else 
+            { 
+                if (Unit *creator = m_caster->GetMap()->GetUnit(m_caster->GetCreatorGuid())) 
+                    targetUnitMap.push_back(creator); 
+            } 
+            break; 
+        }
         default:
             //sLog.outError( "SPELL: Unknown implicit target (%u) for spell ID %u", targetMode, m_spellInfo->Id );
             break;
     }
-
     if (unMaxTargets && targetUnitMap.size() > unMaxTargets)
     {
         // make sure one unit is always removed per iteration
