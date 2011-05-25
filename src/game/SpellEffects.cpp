@@ -10829,8 +10829,16 @@ void Spell::EffectTransmitted(SpellEffectIndex eff_idx)
                 Creature* cBomb = m_caster->SummonCreature(bombId, fx, fy, fz, 0, TEMPSUMMON_DEAD_DESPAWN, 0);
                 if (!cBomb)
                     return;
-                cBomb->setFaction(team);
-                cBomb->SetCharmerGuid(m_caster->GetGUID());
+                if (type == BATTLEGROUND_SA)
+				{
+					cBomb->setFaction(35);
+				}
+				else
+				{
+					cBomb->setFaction(team);
+				}
+				cBomb->SetCharmerGuid(m_caster->GetObjectGuid());
+				m_caster->RemoveAura(52418,EFFECT_INDEX_0);
                 bg->EventSpawnGOSA(((Player*)m_caster),cBomb,fx,fy,fz);
             }
         }
