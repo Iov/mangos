@@ -1471,7 +1471,7 @@ void Spell::DoSpellHitOnUnit(Unit *unit, uint32 effectMask)
             {
                 // some spells should not break stealth
                 if (m_spellInfo->Id != 3600 && m_spellInfo->Id != 32375 && m_spellInfo->Id != 32592 && m_spellInfo->Id != 72734 &&
-                    m_spellInfo->Id != 51690 && m_spellInfo->Id != 53055 && m_spellInfo->Id != 58838 ||
+                    m_spellInfo->Id != 51690 && m_spellInfo->Id != 53055 && m_spellInfo->Id != 58838 && m_spellInfo->Id != 13809 ||
                     // some spells must break stealth
                     (m_spellInfo->SpellFamilyName == SPELLFAMILY_ROGUE && m_spellInfo->SpellFamilyFlags == SPELLFAMILYFLAG_ROGUE_SAP))
                 {
@@ -6507,9 +6507,13 @@ SpellCastResult Spell::CheckCasterAuras() const
                 dispel_immune |= GetDispellMask(DispelType(m_spellInfo->EffectMiscValue[i]));
         }
         // immune movement impairment and loss of control
-        if (m_spellInfo->Id == 42292)                       // PvP Trinket
+        if (m_spellInfo->Id == 42292 || m_spellInfo->Id ==  59752) // PvP Trinket and Every Man For Himself
             mechanic_immune = IMMUNE_TO_MOVEMENT_IMPAIRMENT_AND_LOSS_CONTROL_MASK;
     }
+
+    // Player with Cyclone can only use PvP trinket or Every Man For Himself
+    if (m_caster->HasAura(33786) && mechanic_immune != IMMUNE_TO_MOVEMENT_IMPAIRMENT_AND_LOSS_CONTROL_MASK)
+        return SPELL_FAILED_STUNNED;
 
     // Check whether the cast should be prevented by any state you might have.
     SpellCastResult prevented_reason = SPELL_CAST_OK;
