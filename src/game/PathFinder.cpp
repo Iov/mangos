@@ -231,7 +231,7 @@ void PathInfo::BuildPolyPath(PathNode startPos, PathNode endPos)
             else
             {
                 DEBUG_FILTER_LOG(LOG_FILTER_PATHFINDING, "++ BuildPolyPath :: flying case\n");
-                if (owner->CanFly())
+                if (owner->CanFly() || owner->IsPet())
                     buildShotrcut = true;
             }
         }
