@@ -4519,6 +4519,13 @@ bool Unit::AddSpellAuraHolder(SpellAuraHolder *holder)
                         break;
                 }
 
+                // Warlock's Drain Soul must stack from different casters
+                if (const SpellEntry* sp = foundHolder->GetSpellProto())
+                {
+                    if (sp && sp->SpellFamilyName == SPELLFAMILY_WARLOCK && sp->SpellIconID == 113 && (sp->SpellFamilyFlags & UI64LIT(0x00004000)))
+                        break;
+                }
+
                 switch(aurNameReal)
                 {
                     // DoT/HoT/etc
