@@ -1703,6 +1703,10 @@ struct SpellEntry
     private:
         // prevent creating custom entries (copy data from original in fact)
         SpellEntry(SpellEntry const&);                      // DON'T must have implementation
+
+        // catch wrong uses
+        template<typename T>
+        bool IsFitToFamilyMask(SpellFamily family, T t) const;
 };
 
 struct SpellCastTimesEntry

@@ -4374,8 +4374,16 @@ void Player::DeleteFromDB(ObjectGuid playerguid, uint32 accountId, bool updateRe
 
     // remove from guild
     if (uint32 guildId = GetGuildIdFromDB(playerguid))
+    {
         if (Guild* guild = sGuildMgr.GetGuildById(guildId))
-            guild->DelMember(playerguid);
+        {
+            if (guild->DelMember(playerguid))
+            {
+                guild->Disband();
+                delete guild;
+            }
+        }
+    }
 
     // remove from arena teams
     LeaveAllArenaTeams(playerguid);
@@ -14671,6 +14679,17 @@ void Player::RewardQuest(Quest const *pQuest, uint32 reward, Object* questGiver,
             DestroyItemCount(pQuest->ReqItemId[i], pQuest->ReqItemCount[i], true);
     }
 
+    // Destroy quest item
+    uint32 srcitem = pQuest->GetSrcItemId();
+    if (srcitem > 0)
+    {
+        uint32 count = pQuest->GetSrcItemCount();
+        if (count <= 0)
+            count = 1;
+
+        DestroyItemCount(srcitem, count, true, true);
+    }  
+
     RemoveTimedQuest(quest_id);
 
     if (BattleGround* bg = GetBattleGround())
@@ -21022,6 +21041,20 @@ template void Player::UpdateVisibilityOf(WorldObject const* viewPoint, Creature*
 template void Player::UpdateVisibilityOf(WorldObject const* viewPoint, Corpse*        target, UpdateData& data, std::set<WorldObject*>& visibleNow);
 template void Player::UpdateVisibilityOf(WorldObject const* viewPoint, GameObject*    target, UpdateData& data, std::set<WorldObject*>& visibleNow);
 template void Player::UpdateVisibilityOf(WorldObject const* viewPoint, DynamicObject* target, UpdateData& data, std::set<WorldObject*>& visibleNow);
+
+void Player::SetPhaseMask(uint32 newPhaseMask, bool update)
+{
+    // GM-mode have mask PHASEMASK_ANYWHERE always
+    if (isGameMaster())
+        newPhaseMask = PHASEMASK_ANYWHERE;
+
+    // phase auras normally not expected at BG but anyway better check
+    if (BattleGround *bg = GetBattleGround())
+        bg->EventPlayerDroppedFlag(this);
+
+    Unit::SetPhaseMask(newPhaseMask, update);
+    GetSession()->SendSetPhaseShift(GetPhaseMask());
+}
 
 void Player::InitPrimaryProfessions()
 {
