@@ -422,7 +422,7 @@ void BattleGroundSA::UpdatePhase()
 
     SpawnEvent(SA_EVENT_ADD_BOMB, (GetDefender() == ALLIANCE ? 1 : 0), true);
 
-    _GydOccupied(3, GetDefender() == HORDE ? ALLIANCE : HORDE);
+    _GydOccupied(3, GetDefender() == ALLIANCE ? ALLIANCE : HORDE);
 
     SpawnEvent(SA_EVENT_ADD_SPIR, BG_SA_GARVE_STATUS_HORDE_OCCUPIED, GetDefender() == ALLIANCE ? false : true);
     SpawnEvent(SA_EVENT_ADD_SPIR, BG_SA_GARVE_STATUS_ALLY_OCCUPIED, GetDefender() == ALLIANCE ? true : false);
