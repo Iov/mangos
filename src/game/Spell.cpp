@@ -2322,6 +2322,15 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
                 break;
             else
                 FillAreaTargets(targetUnitMap, radius, PUSH_DEST_CENTER, SPELL_TARGETS_AOE_DAMAGE);
+            
+			if (m_spellInfo->Id == 62240 || m_spellInfo->Id == 62920) 
+            { 
+                if (SpellAuraHolder *holder = m_caster->GetSpellAuraHolder(62239)) 
+                    unMaxTargets = holder->GetStackAmount(); 
+                else 
+                    unMaxTargets = 1; 
+            }
+			//break;    might need a break  here  gonna have to do some testing
 
             // Ghoul Taunt (Army of the Dead) - exclude Player and WorldBoss targets
             if (m_spellInfo->Id == 43263)
@@ -2747,6 +2756,20 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
                 Unit *pUnitTarget = *itr;
                 targetUnitMap.push_back(pUnitTarget);
             }
+            // Searing Light
+            if (m_spellInfo->Id == 63023 || m_spellInfo->Id == 65120)
+            {
+                FillAreaTargets(targetUnitMap, radius, PUSH_SELF_CENTER, SPELL_TARGETS_HOSTILE);
+                break;
+            }
+            // Gravity Bomb
+            else if (m_spellInfo->Id == 63025 || m_spellInfo->Id == 64233)
+            {
+                FillAreaTargets(targetUnitMap, radius, PUSH_SELF_CENTER, SPELL_TARGETS_HOSTILE);
+                targetUnitMap.remove(m_caster);
+                break;
+            }
+
             // Death Pact (in fact selection by player selection)
             else if (m_spellInfo->Id == 48743)
             {
