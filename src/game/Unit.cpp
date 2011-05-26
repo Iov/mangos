@@ -7468,12 +7468,12 @@ bool Unit::IsSpellCrit(Unit *pVictim, SpellEntry const *spellProto, SpellSchoolM
                         }
                         break;
                         // Improved Faerie Fire
-                        if(pVictim->HasAura(770) || pVictim->HasAura(16857))
+                        if (pVictim->HasAura(770) || pVictim->HasAura(16857))
                         {
                             AuraList const& ImprovedAura = GetAurasByType(SPELL_AURA_DUMMY);
                             for(AuraList::const_iterator iter = ImprovedAura.begin(); iter != ImprovedAura.end(); ++iter)
                             {
-                                if((*iter)->GetEffIndex() == 0 && (*iter)->GetSpellProto()->SpellIconID == 109 && (*iter)->GetSpellProto()->SpellFamilyName == SPELLFAMILY_DRUID)
+                                if ((*iter)->GetSpellProto()->IsFitToFamily(SPELLFAMILY_DRUID, UI64LIT(0x0000000000000400)))
                                 {
                                     crit_chance += (*iter)->GetModifier()->m_amount;
                                     break;
