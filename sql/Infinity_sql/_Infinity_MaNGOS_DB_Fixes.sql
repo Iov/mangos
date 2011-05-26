@@ -113,8 +113,6 @@ INSERT INTO `creature_ai_scripts` VALUES ('2900703', '29007', '11', '0', '100', 
 DELETE FROM `creature` WHERE `id`=28957;
 INSERT INTO `creature` (`guid`,`id`,`map`,`spawnMask`,`phaseMask`,`modelid`,`equipment_id`,`position_x`,`position_y`,`position_z`,`orientation`,`spawntimesecs`,`spawndist`,`currentwaypoint`,`curhealth`,`curmana`,`DeathState`,`MovementType`) VALUES
 (7779004, 28957, 609, 1, 65535, 0, 0, 1453.79, -5998.23, 117.191, 1.11162, 25, 0, 0, 1, 0, 0, 0);
-UPDATE `creature_template` SET `ScriptName`='mob_scarlet_courier_controller' WHERE `entry`='28957';
-UPDATE `creature_template` SET `ScriptName`='mob_scarlet_courier' WHERE `entry`='29076';
 
 UPDATE `quest_template` SET `ReqItemId3` = 39645, `ReqItemCount3` = 1 WHERE `entry` = 12754; -- Takes back the item used to use to make cover
 
