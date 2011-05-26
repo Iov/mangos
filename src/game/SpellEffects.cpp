@@ -997,6 +997,23 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
                     unitTarget->CastSpell(unitTarget, 24085, true);
                     return;
                 }
+                case 7769:                                  // Strafe Jotunheim Building 
+                {
+                    if (Unit* pCaster = GetCaster())
+                    {
+                       if (Creature* pBuilding = pCaster->GetClosestCreatureWithEntry(pCaster, 30599, 50))
+                       {
+                           if (!pBuilding->HasAura(7448)) // Do not give credit for already burning buildings 
+                           {
+                               if (pCaster->GetCharmerOrOwnerPlayerOrPlayerItself())
+                               {
+                                   pCaster->GetCharmerOrOwnerPlayerOrPlayerItself()->KilledMonsterCredit(30576);
+                                   pBuilding->CastSpell(pBuilding, 7448, true);
+                               }
+                           }
+                       }
+                    }
+                }
                 case 8063:                                  // Deviate Fish
                 {
                     if (m_caster->GetTypeId() != TYPEID_PLAYER)
@@ -1523,6 +1540,33 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
                     ((Player*)m_caster)->KilledMonsterCredit(unitTarget->GetEntry(), unitTarget->GetObjectGuid());
                     ((Creature*)unitTarget)->ForcedDespawn(10000);
                     return;
+                }
+                case 39844:                                 // Quest Fires Over Skettis
+                { 
+                    if (m_caster->GetTypeId() != TYPEID_PLAYER) 
+                        return; 
+
+                    // Iterate for all creatures around cast place 
+
+                    std::list<GameObject*> gobList; 
+                    { 
+                        MaNGOS::GameObjectInRangeCheck go_check(m_caster, m_targets.m_srcX, m_targets.m_srcY, m_targets.m_srcZ, 5.0f); // 5 yards check 
+                        MaNGOS::GameObjectListSearcher<MaNGOS::GameObjectInRangeCheck> go_search(gobList, go_check); 
+                        Cell::VisitAllObjects(m_caster, go_search, 5.0f); 
+                    } 
+
+                    if (!gobList.empty()) 
+                    { 
+                        for(std::list<GameObject*>::iterator itr = gobList.begin(); itr != gobList.end(); ++itr) 
+                        { 
+                            if( (*itr)->GetEntry() == 185549 ) 
+                            { 
+                                (*itr)->SetLootState(GO_READY); 
+                                ((Player*)m_caster)->KilledMonsterCredit(22991); 
+                            } 
+                        } 
+                    } 
+                    return; 
                 }
                 case 39992:                                 // High Warlord Naj'entus: Needle Spine Targeting
                 {
@@ -2668,6 +2712,22 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
                     // Must have a delay for proper spell animation
                     ((Creature*)unitTarget)->ForcedDespawn(1000);
                     return;
+                }
+                case 62653:                  // Tidal Wave
+                { 
+                     if(!unitTarget) 
+                     return; 
+
+                     m_caster->CastSpell(unitTarget, 62654, true); 
+                     return; 
+                } 
+                case 62935:                  // Tidal Wave (H)
+                { 
+                   if(!unitTarget) 
+                   return; 
+
+                   m_caster->CastSpell(unitTarget, 62936, true); 
+                   return; 
                 }
                 case 67019:                                 // Flask of the North
                 {
@@ -7951,6 +8011,24 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
                     unitTarget->CastSpell(unitTarget, damage, false);
                     break;
                 }
+                case 58983:                                 // Big Blizzard Bear
+                {  
+                    if(!unitTarget || unitTarget->GetTypeId() != TYPEID_PLAYER)  
+                        return;  
+ 
+                    // Prevent stacking of mounts  
+                    unitTarget->RemoveSpellsCausingAura(SPELL_AURA_MOUNTED);  
+ 
+                    // Triggered spell id dependent of riding skill  
+                    if(uint16 skillval = ((Player*)unitTarget)->GetSkillValue(SKILL_RIDING))  
+                    {  
+                        if (skillval >= 150)  
+                            unitTarget->CastSpell(unitTarget, 58999, true);  
+                        else  
+                            unitTarget->CastSpell(unitTarget, 58997, true);  
+                    }  
+                    return;  
+                }
                 case 52941:                                 // Song of Cleansing
                 {
                     uint32 spellId = 0;
@@ -8307,6 +8385,15 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
                     unitTarget->CastSpell(m_caster, 62708, true); // Control Vehicle aura
                     m_caster->CastSpell(unitTarget, (m_spellInfo->Id == 62707) ? 62717 : 63477, true); // DoT/Immunity
                     break;
+                }
+                case 65044:                                 // Flames Ulduar
+                {  
+                    if (!unitTarget)  
+                        return;  
+
+                    if (unitTarget->HasAura(62297))  
+                        unitTarget->RemoveAurasDueToSpell(62297);   // Remove Hodir's Fury
+                    break;  
                 }
                 case 65917:                                 // Magic Rooster 
                 { 
