@@ -1054,6 +1054,23 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
                     unitTarget->CastSpell(unitTarget, 24085, true);
                     return;
                 }
+                case 7769:                                  // Strafe Jotunheim Building 
+                {
+                    if (Unit* pCaster = GetCaster())
+                    {
+                       if (Creature* pBuilding = pCaster->GetClosestCreatureWithEntry(pCaster, 30599, 50))
+                       {
+                           if (!pBuilding->HasAura(7448)) // Do not give credit for already burning buildings 
+                           {
+                               if (pCaster->GetCharmerOrOwnerPlayerOrPlayerItself())
+                               {
+                                   pCaster->GetCharmerOrOwnerPlayerOrPlayerItself()->KilledMonsterCredit(30576);
+                                   pBuilding->CastSpell(pBuilding, 7448, true);
+                               }
+                           }
+                       }
+                    }
+                }
                 case 8063:                                  // Deviate Fish
                 {
                     if (m_caster->GetTypeId() != TYPEID_PLAYER)
@@ -1633,7 +1650,7 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
                     ((Creature*)unitTarget)->ForcedDespawn(10000);
                     return;
                 }
-                case 39844:                         //Q:Fires Over Skettis 
+                case 39844:                                 // Quest Fires Over Skettis
                 { 
                     if (m_caster->GetTypeId() != TYPEID_PLAYER) 
                         return; 
@@ -2935,15 +2952,15 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
                     ((Creature*)unitTarget)->ForcedDespawn(1000);
                     return;
                 }
-                case 62653:                  // Tidal Wave - nonheroic version 
+                case 62653:                  // Tidal Wave
                 { 
                      if(!unitTarget) 
                      return; 
 
                      m_caster->CastSpell(unitTarget, 62654, true); 
                      return; 
-                } 
-                case 62935:                  // Tidal Wave - heroic version 
+                }
+                case 62935:                  // Tidal Wave (H)
                 { 
                    if(!unitTarget) 
                    return; 
@@ -8573,8 +8590,7 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
                     unitTarget->CastSpell(unitTarget, damage, false);
                     break;
                 }
-                //Big Blizzard Bear  
-                case 58983:  
+                case 58983:                                 // Big Blizzard Bear
                 {  
                     if(!unitTarget || unitTarget->GetTypeId() != TYPEID_PLAYER)  
                         return;  
@@ -8962,13 +8978,13 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
                     m_caster->CastSpell(unitTarget, (m_spellInfo->Id == 62707) ? 62717 : 63477, true); // DoT/Immunity
                     break;
                 }
-                case 65044:                                 // Flames Ulduar  
+                case 65044:                                 // Flames Ulduar
                 {  
                     if (!unitTarget)  
                         return;  
- 
+
                     if (unitTarget->HasAura(62297))  
-                        unitTarget->RemoveAurasDueToSpell(62297);   // Remove Hodir's Fury  
+                        unitTarget->RemoveAurasDueToSpell(62297);   // Remove Hodir's Fury
                     break;  
                 }
                 case 65917:                                 // Magic Rooster 
