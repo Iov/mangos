@@ -1997,7 +1997,7 @@ void BattleGround::SendWarningToAll(int32 entry, ...)
     for (BattleGroundPlayerMap::const_iterator itr = m_Players.begin(); itr != m_Players.end(); ++itr)
     {
         //if (control == 40) // More than 40 iterations? This is imposible, so, break me! -- ive forgot why these needed commented
-            break;
+            //break;
 
         if (Player *plr = ObjectAccessor::FindPlayer(ObjectGuid(itr->first)))
             if (plr->GetSession())
