@@ -34,11 +34,14 @@ class Transport : public GameObject
         bool Create(uint32 guidlow, uint32 mapid, float x, float y, float z, float ang, uint8 animprogress, uint16 dynamicHighValue);
         bool GenerateWaypoints(uint32 pathid, std::set<uint32> &mapids);
         void Update(uint32 update_diff, uint32 p_time);
+        void UpdateNPCPositions();
         bool AddPassenger(Unit* passenger);
         bool RemovePassenger(Unit* passenger);
 
         typedef std::set<Unit*> UnitSet;
         UnitSet const& GetUnitPassengers() const { return _passengers; }
+
+        bool AddNPCPassenger(uint32 entry, float x, float y, float z, float o, uint32 anim=0);
 
         void BuildCreateUpdateBlockForPlayer(UpdateData* data, Player* target);
 
