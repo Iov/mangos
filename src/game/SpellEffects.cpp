@@ -8325,6 +8325,15 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
                     m_caster->CastSpell(unitTarget, (m_spellInfo->Id == 62707) ? 62717 : 63477, true); // DoT/Immunity
                     break;
                 }
+                case 65044:                                 // Flames Ulduar
+                {  
+                    if (!unitTarget)  
+                        return;  
+
+                    if (unitTarget->HasAura(62297))  
+                        unitTarget->RemoveAurasDueToSpell(62297);   // Remove Hodir's Fury
+                    break;  
+                }
                 case 65917:                                 // Magic Rooster 
                 { 
                     if (!unitTarget || unitTarget->GetTypeId() != TYPEID_PLAYER) 
