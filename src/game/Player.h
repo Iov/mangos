@@ -23,7 +23,7 @@
 #include "ItemPrototype.h"
 #include "Unit.h"
 #include "Item.h"
-
+#include "SpellMgr.h"
 #include "Database/DatabaseEnv.h"
 #include "NPCHandler.h"
 #include "QuestDef.h"
@@ -1116,6 +1116,7 @@ class MANGOS_DLL_SPEC Player : public Unit
 
         bool IsInWater() const { return m_isInWater; }
         bool IsUnderWater() const;
+        bool IsFalling() { return GetPositionZ() < m_lastFallZ; }
 
         void SendInitialPacketsBeforeAddToMap();
         void SendInitialPacketsAfterAddToMap();
@@ -1283,6 +1284,101 @@ class MANGOS_DLL_SPEC Player : public Unit
 
         void AutoStoreLoot(uint32 loot_id, LootStore const& store, bool broadcast = false, uint8 bag = NULL_BAG, uint8 slot = NULL_SLOT);
         void AutoStoreLoot(Loot& loot, bool broadcast = false, uint8 bag = NULL_BAG, uint8 slot = NULL_SLOT);
+
+        /// Flying Everywhere
+        void FlyingMountsSpellsToItems();
+        bool CanUseFlyingMounts(SpellEntry const* spellInfo);
+        // helper functions
+        bool isFlyingSpell(SpellEntry const* spellInfo) const
+        {
+            return spellInfo->EffectApplyAuraName[0]==SPELL_AURA_MOUNTED &&
+            IsSpellHaveAura(spellInfo, SPELL_AURA_MOD_FLIGHT_SPEED_MOUNTED);
+            //IsSpellHaveAura(spellInfo, SPELL_AURA_MOD_INCREASE_MOUNTED_SPEED);
+            //spellInfo->EffectApplyAuraName[1]==SPELL_AURA_MOD_INCREASE_FLIGHT_SPEED &&
+            //spellInfo->EffectApplyAuraName[2]==SPELL_AURA_MOD_INCREASE_MOUNTED_SPEED;
+        }
+
+        bool isRunningSpell(SpellEntry const* spellInfo) const
+        {
+            return spellInfo->EffectApplyAuraName[0]==SPELL_AURA_MOUNTED &&
+            spellInfo->EffectApplyAuraName[1]==SPELL_AURA_MOD_INCREASE_MOUNTED_SPEED;
+        }
+
+        bool isFlyingFormSpell(SpellEntry const* spellInfo) const
+        {
+            return spellInfo->EffectApplyAuraName[0]==SPELL_AURA_MOD_SHAPESHIFT &&
+            spellInfo->EffectApplyAuraName[1]==SPELL_AURA_MECHANIC_IMMUNITY &&
+            spellInfo->EffectApplyAuraName[2]==SPELL_AURA_FLY;
+        }
+
+        bool isRunningFormSpell(SpellEntry const* spellInfo) const
+        {
+            return spellInfo->EffectApplyAuraName[0]==SPELL_AURA_MOD_SHAPESHIFT &&
+            spellInfo->EffectApplyAuraName[1]==SPELL_AURA_MECHANIC_IMMUNITY &&
+            spellInfo->EffectApplyAuraName[2]!=SPELL_AURA_FLY;
+        }
+
+        void RemoveFlyingSpells()
+        {
+            Unmount();
+            RemoveSpellsCausingAura(SPELL_AURA_MOUNTED);
+            RemoveSpellsCausingAura(SPELL_AURA_MOD_FLIGHT_SPEED_MOUNTED); //BM added
+            //RemoveSpellsCausingAura(SPELL_AURA_MOD_INCREASE_FLIGHT_SPEED); //BM removed
+            //RemoveSpellsCausingAura(SPELL_AURA_MOD_INCREASE_MOUNTED_SPEED); //BM removed
+        }
+
+        void RemoveFlyingFormSpells()
+        {
+            RemoveSpellsCausingAura(SPELL_AURA_MOD_SHAPESHIFT);
+            RemoveSpellsCausingAura(SPELL_AURA_MECHANIC_IMMUNITY);
+            RemoveSpellsCausingAura(SPELL_AURA_FLY);
+        }
+
+        void RemoveRunningFormSpells()
+        {
+            RemoveSpellsCausingAura(SPELL_AURA_MOD_SHAPESHIFT);
+            RemoveSpellsCausingAura(SPELL_AURA_MECHANIC_IMMUNITY);
+        }
+
+        void RemoveAllFlyingSpells()
+        {
+            RemoveFlyingSpells();
+            RemoveFlyingFormSpells();
+        }
+
+        bool HasAuraTypeFlyingSpell()
+        {
+            return HasAuraType(SPELL_AURA_MOUNTED) &&
+            HasAuraType(SPELL_AURA_MOD_FLIGHT_SPEED_MOUNTED);       //BM added
+            //HasAuraType(SPELL_AURA_MOD_INCREASE_FLIGHT_SPEED) &&  //BM removed
+            //HasAuraType(SPELL_AURA_MOD_INCREASE_MOUNTED_SPEED);   //BM removed
+        }
+
+        bool HasAuraTypeFlyingFormSpell()
+        {
+            return HasAuraType(SPELL_AURA_MOD_SHAPESHIFT) &&
+            HasAuraType(SPELL_AURA_MECHANIC_IMMUNITY) &&
+            HasAuraType(SPELL_AURA_FLY);
+        }
+
+        bool HasAuraTypeRunningFormSpell()
+        {
+            return HasAuraType(SPELL_AURA_MOD_SHAPESHIFT) &&
+            HasAuraType(SPELL_AURA_MECHANIC_IMMUNITY) &&
+            !HasAuraType(SPELL_AURA_FLY);
+        }
+
+        bool GetFlyingMountTimer()
+        {
+            return m_flytimer < time(NULL);
+        }
+
+        void SetFlyingMountTimer()
+        {
+            m_flytimer = time(NULL) + 0.5;
+        }
+        //end of helpers.
+        ///end of Flying Everywhere
 
         InventoryResult _CanTakeMoreSimilarItems(uint32 entry, uint32 count, Item* pItem, uint32* no_space_count = NULL) const;
         InventoryResult _CanStoreItem( uint8 bag, uint8 slot, ItemPosCountVec& dest, uint32 entry, uint32 count, Item *pItem = NULL, bool swap = false, uint32* no_space_count = NULL ) const;
@@ -1503,6 +1599,7 @@ class MANGOS_DLL_SPEC Player : public Unit
         void chompAndTrim(std::string& str);
         bool getNextQuestId(const std::string& pString, unsigned int& pStartPos, unsigned int& pId);
         void skill(std::list<uint32>& m_spellsToLearn);
+        void MakeTalentGlyphLink(std::ostringstream &out);
         bool requiredQuests(const char* pQuestIdString);
 
         /*********************************************************/
@@ -1879,6 +1976,7 @@ class MANGOS_DLL_SPEC Player : public Unit
         void UpdateArmorPenetration();
         void ApplyManaRegenBonus(int32 amount, bool apply);
         void UpdateManaRegen();
+        void ApplyHealthRegenBonus(int32 amount, bool apply);
 
         ObjectGuid const& GetLootGuid() const { return m_lootGuid; }
         void SetLootGuid(ObjectGuid const& guid) { m_lootGuid = guid; }
@@ -1977,6 +2075,7 @@ class MANGOS_DLL_SPEC Player : public Unit
 
         static Team TeamForRace(uint8 race);
         Team GetTeam() const { return m_team; }
+        TeamId GetTeamId() const { return m_team == ALLIANCE ? TEAM_ALLIANCE : TEAM_HORDE; }
         static uint32 getFactionForRace(uint8 race);
         void setFactionForRace(uint8 race);
 
@@ -2059,6 +2158,9 @@ class MANGOS_DLL_SPEC Player : public Unit
         void _ApplyWeaponDependentAuraMods(Item *item, WeaponAttackType attackType, bool apply);
         void _ApplyWeaponDependentAuraCritMod(Item *item, WeaponAttackType attackType, Aura* aura, bool apply);
         void _ApplyWeaponDependentAuraDamageMod(Item *item, WeaponAttackType attackType, Aura* aura, bool apply);
+
+        ///PVP Token
+        void ReceiveToken();
 
         void _ApplyItemMods(Item *item,uint8 slot,bool apply);
         void _RemoveAllItemMods();
@@ -2600,6 +2702,7 @@ class MANGOS_DLL_SPEC Player : public Unit
         uint16 m_baseSpellPower;
         uint16 m_baseFeralAP;
         uint16 m_baseManaRegen;
+        uint16 m_baseHealthRegen;
         float m_armorPenetrationPct;
         int32 m_spellPenetrationItemMod;
 
@@ -2637,6 +2740,9 @@ class MANGOS_DLL_SPEC Player : public Unit
 
         uint32 m_deathTimer;
         time_t m_deathExpireTime;
+
+        /// Flying mount everywhere
+        time_t m_flytimer;
 
         uint32 m_restTime;
 

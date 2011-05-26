@@ -1017,6 +1017,12 @@ SpellAuraProcResult Unit::HandleDummyAuraProc(Unit *pVictim, uint32 damage, Aura
                     CastSpell(triggeredByAura->GetCaster(), 71203, true);
                     return SPELL_AURA_PROC_OK;
                 }
+                // Glyph of Shadowflame 
+                case 63310: 
+                { 
+                    triggered_spell_id = 63311; 
+                    break; 
+                }
                 // Item - Shadowmourne Legendary
                 case 71903:
                 {
@@ -1365,6 +1371,7 @@ SpellAuraProcResult Unit::HandleDummyAuraProc(Unit *pVictim, uint32 damage, Aura
 
                     pVictim->RemoveSpellsCausingAura(SPELL_AURA_PERIODIC_DAMAGE);
                     pVictim->RemoveSpellsCausingAura(SPELL_AURA_PERIODIC_DAMAGE_PERCENT);
+                    pVictim->RemoveSpellsCausingAura(SPELL_AURA_PERIODIC_LEECH);
                     return SPELL_AURA_PROC_OK;
                 }
                 // Blessing of Ancient Kings
@@ -4082,6 +4089,12 @@ SpellAuraProcResult Unit::HandleProcTriggerSpellAuraProc(Unit *pVictim, uint32 d
                     return SPELL_AURA_PROC_FAILED;
                 basepoints[0] = triggerAmount * damage / 100;
                 trigger_spell_id = 50475;
+            }
+            // Glyph of Death's Embrace 
+            else if (auraSpellInfo->Id == 58677) 
+            { 
+                if (procSpell->Id != 47633) 
+                    return SPELL_AURA_PROC_FAILED; 
             }
             // Bloodworms
             else if (auraSpellInfo->Id == 49543)

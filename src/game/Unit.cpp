@@ -330,6 +330,13 @@ void Unit::Update( uint32 update_diff, uint32 p_time )
     // Spells must be processed with event system BEFORE they go to _UpdateSpells.
     // Or else we may have some SPELL_STATE_FINISHED spells stalled in pointers, that is bad.
     m_Events.Update( update_diff );
+
+    if(!IsInWorld())
+	{
+		sLog.outError("unit is not in world anymore after m_events update");
+		return;
+	}
+
     _UpdateSpells( update_diff );
 
     CleanupDeletedAuras();
@@ -912,6 +919,18 @@ uint32 Unit::DealDamage(Unit *pVictim, uint32 damage, CleanDamage const* cleanDa
         if(player_tap && player_tap != pVictim)
         {
             player_tap->ProcDamageAndSpell(pVictim, PROC_FLAG_KILL, PROC_FLAG_KILLED, PROC_EX_NONE, 0);
+
+            // PvP Token
+            int8 leveldiff = player_tap->getLevel() - pVictim->getLevel();
+            if((pVictim->GetTypeId() == TYPEID_PLAYER) && leveldiff < 1)
+                player_tap->ReceiveToken();
+				
+            /// PvP Announcer
+            if (sWorld.getConfig(CONFIG_BOOL_PVP_ANNOUNCER))
+            {
+                if (pVictim->GetTypeId() == TYPEID_PLAYER)
+                    sWorld.SendPvPAnnounce(player_tap, ((Player*)pVictim));
+            }
 
             WorldPacket data(SMSG_PARTYKILLLOG, (8+8));     //send event PARTY_KILL
             data << player_tap->GetObjectGuid();            //player with killing blow
@@ -4412,6 +4431,13 @@ bool Unit::AddSpellAuraHolder(SpellAuraHolder *holder)
         return false;
     }
 
+    // Strength of the Pack must affect only Sanctum Sentries and exclude caster too (Auriaya encounter, Ulduar)
+    if (holder->GetId() == 64381 && (this->GetEntry() != 34014 || this->GetObjectGuid() == holder->GetCasterGuid()))
+    {
+        delete holder;
+        return false;
+    }
+
     // passive and persistent auras can stack with themselves any number of times
     if ((!holder->IsPassive() && !holder->IsPersistent()) || holder->IsAreaAura())
     {
@@ -4445,6 +4471,10 @@ bool Unit::AddSpellAuraHolder(SpellAuraHolder *holder)
                         {
                             // m_auraname can be modified to SPELL_AURA_NONE for area auras, use original
                             AuraType aurNameReal = AuraType(aurSpellInfo->EffectApplyAuraName[i]);
+
+                            // Strength of the Pack must stuck from different casters (Auriaya encounter, Ulduar)
+                           if (foundHolder->GetId() == 64381)
+                              continue;
 
                             if (aurNameReal == SPELL_AURA_PERIODIC_DAMAGE && aur->GetAuraDuration() > 0)
                             {
@@ -4482,6 +4512,13 @@ bool Unit::AddSpellAuraHolder(SpellAuraHolder *holder)
                 if (const SpellEntry* sp = foundHolder->GetSpellProto())
                 {
                     if (sp && sp->SpellFamilyName == SPELLFAMILY_PRIEST && sp->SpellIconID == 548 && (sp->SpellFamilyFlags2 & UI64LIT(0x00000040)))
+                        break;
+                }
+
+                // Warlock's Drain Soul must stack from different casters
+                if (const SpellEntry* sp = foundHolder->GetSpellProto())
+                {
+                    if (sp && sp->SpellFamilyName == SPELLFAMILY_WARLOCK && sp->SpellIconID == 113 && (sp->SpellFamilyFlags & UI64LIT(0x00004000)))
                         break;
                 }
 
@@ -7467,6 +7504,20 @@ bool Unit::IsSpellCrit(Unit *pVictim, SpellEntry const *spellProto, SpellSchoolM
                                 }
                             }
                         }
+                        break;
+                        // Improved Faerie Fire 
+                        if(pVictim->HasAura(770) || pVictim->HasAura(16857)) 
+                        { 
+                            AuraList const& ImprovedAura = GetAurasByType(SPELL_AURA_DUMMY); 
+                            for(AuraList::const_iterator iter = ImprovedAura.begin(); iter != ImprovedAura.end(); ++iter) 
+                            { 
+                                if((*iter)->GetEffIndex() == 0 && (*iter)->GetSpellProto()->SpellIconID == 109 && (*iter)->GetSpellProto()->SpellFamilyName == SPELLFAMILY_DRUID) 
+                                { 
+                                    crit_chance += (*iter)->GetModifier()->m_amount; 
+                                    break; 
+                                } 
+                            } 
+                        } 
                         break;
                     case SPELLFAMILY_PALADIN:
                         // Sacred Shield
@@ -12242,6 +12293,11 @@ SpellAuraHolder* Unit::GetSpellAuraHolder (uint32 spellid, ObjectGuid casterGuid
             return iter->second;
 
     return NULL;
+}
+
+void Unit::RemoveUnitFromHostileRefManager(Unit* p_unit) 
+{ 
+    getHostileRefManager().deleteReference(p_unit); 
 }
 
 void Unit::_AddAura(uint32 spellID, uint32 duration)

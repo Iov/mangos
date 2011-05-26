@@ -71,6 +71,7 @@ void SqlDelayThread::ProcessRequests()
     SqlOperation* s = NULL;
     while (m_sqlQueue.next(s))
     {
+        if (!s) continue;     //use to be need  might actually be causing crases now a day needs testing
         s->Execute(m_dbConnection);
         delete s;
     }

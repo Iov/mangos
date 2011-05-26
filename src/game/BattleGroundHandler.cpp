@@ -107,6 +107,14 @@ void WorldSession::HandleBattlemasterJoinOpcode( WorldPacket & recv_data )
     if (_player->InBattleGround())
         return;
 
+    // prevent joining from instances
+	uint32 mapid = _player->GetMapId();
+	if(mapid != 0 && mapid != 1 && mapid != 530 && mapid != 571)
+	{
+		SendNotification("You cannot join from here");
+		return;
+	}
+
     // get bg instance or bg template if instance not found
     BattleGround *bg = NULL;
     if (instanceId)
@@ -210,6 +218,10 @@ void WorldSession::HandleBattlemasterJoinOpcode( WorldPacket & recv_data )
                 member->GetSession()->SendPacket(&data);
                 continue;
             }
+
+            uint32 mapid = member->GetMapId();
+			if(mapid != 0 && mapid != 1 && mapid != 530 && mapid != 571)
+				continue;
 
             // add to queue
             uint32 queueSlot = member->AddBattleGroundQueueId(bgQueueTypeId);

@@ -297,6 +297,8 @@ bool ReputationMgr::SetReputation(FactionEntry const* factionEntry, int32 standi
         // only this faction gets reported to client, even if it has no own visible standing
         SendState(&faction->second);
     }
+    if (factionEntry->ID == 1037 || factionEntry->ID == 1052) 
+            res = SetOneFactionReputation(factionEntry, standing, incremental);
     return res;
 }
 
@@ -365,7 +367,8 @@ void ReputationMgr::SetVisible(FactionEntry const *factionEntry)
 void ReputationMgr::SetVisible(FactionState* faction)
 {
     // always invisible or hidden faction can't be make visible
-    if(faction->Flags & (FACTION_FLAG_INVISIBLE_FORCED|FACTION_FLAG_HIDDEN))
+    // except if faction has FACTION_FLAG_SPECIAL 
+    if(faction->Flags & (FACTION_FLAG_INVISIBLE_FORCED|FACTION_FLAG_HIDDEN) && !(faction->Flags & FACTION_FLAG_SPECIAL) ) 
         return;
 
     // already set

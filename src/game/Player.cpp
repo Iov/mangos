@@ -565,6 +565,7 @@ Player::Player (WorldSession *session): Unit(), m_mover(this), m_camera(this), m
     m_baseSpellPower = 0;
     m_baseFeralAP = 0;
     m_baseManaRegen = 0;
+    m_baseHealthRegen = 0;
     m_armorPenetrationPct = 0.0f;
     m_spellPenetrationItemMod = 0;
 
@@ -596,6 +597,9 @@ Player::Player (WorldSession *session): Unit(), m_mover(this), m_camera(this), m
     m_playerbotMgr = NULL;
 
     m_anticheat = new AntiCheat(this);
+
+    /*  Flying Everywhere   */
+    m_flytimer = time(NULL);
 
     SetPendingBind(NULL, 0);
     m_LFGState = new LFGPlayerState(this);
@@ -1450,7 +1454,22 @@ void Player::Update( uint32 update_diff, uint32 p_time )
         SetHealth(0);
 
     if (m_deathState == JUST_DIED)
+    {
         KillPlayer();
+		// For SotA Seaforium Bomb - spawn the bomb if the player die
+		if (InBattleGround() && (GetBattleGround()->GetMapId() == 607) && HasItemCount(39213, 1))
+		{
+			if (GetTeam() == ALLIANCE)
+			{
+				SummonGameobject(402000,GetPositionX(),GetPositionY(),GetPositionZ(),GetOrientation(),0);
+			}
+			else
+			{
+				SummonGameobject(402001,GetPositionX(),GetPositionY(),GetPositionZ(),GetOrientation(),0);
+			}
+			DestroyItemCount(39213, 1, true);
+		}
+    }
 
     if(m_nextSave > 0)
     {
@@ -1852,7 +1871,7 @@ bool Player::TeleportTo(uint32 mapid, float x, float y, float z, float orientati
     // reset movement flags at teleport, because player will continue move with these flags after teleport
     m_movementInfo.SetMovementFlags(MOVEFLAG_NONE);
 
-    if (GetMapId() == mapid && !GetTransport())
+    if (GetMapId() == mapid && !GetTransport() || (GetTransport() && GetMapId() == 628))
     {
         //lets reset far teleport flag if it wasn't reset during chained teleports
         SetSemaphoreTeleportFar(false);
@@ -2320,6 +2339,7 @@ void Player::RegenerateHealth(uint32 diff)
 
     // always regeneration bonus (including combat)
     addvalue += GetTotalAuraModifier(SPELL_AURA_MOD_HEALTH_REGEN_IN_COMBAT);
+    addvalue += m_baseHealthRegen / 2.5f; //From ITEM_MOD_HEALTH_REGEN. It is correct tick amount?
 
     if(addvalue < 0)
         addvalue = 0;
@@ -4686,6 +4706,10 @@ void Player::ResurrectPlayer(float restore_percent, bool applySickness)
 
     SetDeathState(ALIVE);
 
+    /*  Flying Everywhere   */
+    if (sWorld.getConfig(CONFIG_BOOL_ALLOW_FLYING_MOUNTS_EVERYWHERE))
+      CastSpell(this, 58601, true);   // needs a better umount spell  but this one removes all flight auras and triggers parachute so it is a fully clean wipe
+
     if(getRace() == RACE_NIGHTELF)
         RemoveAurasDueToSpell(20584);                       // speed bonuses
     RemoveAurasDueToSpell(8326);                            // SPELL_AURA_GHOST
@@ -4768,6 +4792,11 @@ void Player::KillPlayer()
     UpdateCorpseReclaimDelay();                             // dependent at use SetDeathPvP() call before kill
 
     // don't create corpse at this moment, player might be falling
+    if (InBattleGround())
+    {
+        if (BattleGround* bg = GetBattleGround())
+            bg->HandlePlayerResurrect(this);
+    }
 
     // update visibility
     UpdateObjectVisibility();
@@ -5235,8 +5264,17 @@ void Player::HandleBaseModValue(BaseModGroup modGroup, BaseModType modType, floa
             if(amount <= -100.0f)
                 amount = -200.0f;
 
-            val = (100.0f + amount) / 100.0f;
-            m_auraBaseMod[modGroup][modType] *= apply ? val : (1.0f/val);
+            // For Warriors, Shield Block Value PCT_MODs should be added, not multiplied 
+            if (modGroup == SHIELD_BLOCK_VALUE && getClass() == CLASS_WARRIOR) 
+            { 
+                val = amount / 100.0f; 
+                m_auraBaseMod[modGroup][modType] += apply ? val : -val; 
+            } 
+            else 
+            { 
+                val = (100.0f + amount) / 100.0f; 
+                m_auraBaseMod[modGroup][modType] *= apply ? val : (1.0f/val); 
+            }
             break;
     }
 
@@ -6991,6 +7029,7 @@ bool Player::RewardHonor(Unit *uVictim, uint32 groupsize, float honor)
             honor /= groupsize;
 
         honor *= (((float)urand(8,12))/10);                 // approx honor: 80% - 120% of real honor
+        honor *= 2.0f;
     }
 
     // honor - for show honor points in log
@@ -7232,7 +7271,7 @@ void Player::UpdateZone(uint32 newZone, uint32 newArea)
             pvpInfo.endTimer = time(0);                     // start toggle-off
     }
 
-    if(zone->flags & AREA_FLAG_SANCTUARY)                   // in sanctuary
+    if(zone->flags & AREA_FLAG_SANCTUARY || GetZoneId() == 4298)                  // in sanctuary
     {
         SetByteFlag(UNIT_FIELD_BYTES_2, 1, UNIT_BYTE2_FLAG_SANCTUARY);
         if(sWorld.IsFFAPvPRealm())
@@ -7590,6 +7629,9 @@ void Player::_ApplyItemBonuses(ItemPrototype const *proto, uint8 slot, bool appl
                 break;
             case ITEM_MOD_SPELL_POWER:
                 ApplySpellPowerBonus(int32(val), apply);
+                break;
+            case ITEM_MOD_HEALTH_REGEN: 
+                ApplyHealthRegenBonus(int32(val), apply); 
                 break;
             case ITEM_MOD_SPELL_PENETRATION:
                 ApplyModInt32Value(PLAYER_FIELD_MOD_TARGET_RESISTANCE, -int32(val), apply);
@@ -9164,6 +9206,32 @@ void Player::SendInitWorldStates(uint32 zoneid, uint32 areaid)
                 data << uint32(0xe2b) << uint32(0x1);       // 29 3627 Beach1 - Alliance control
                 data << uint32(0xe2a) << uint32(0x1);       // 30 3626 Beach2 - Alliance control
                 // and many unks...
+            }
+            break;	
+        case 4710:
+            if (bg && bg->GetTypeID(true) == BATTLEGROUND_IC)
+                bg->FillInitialWorldStates(data, count);
+            else
+            {
+                data << uint32(4221) << uint32(1); // 7
+                data << uint32(4222) << uint32(1); // 8
+                data << uint32(4226) << uint32(300); // 9
+                data << uint32(4227) << uint32(300); // 10
+                data << uint32(4322) << uint32(1); // 11
+                data << uint32(4321) << uint32(1); // 12
+                data << uint32(4320) << uint32(1); // 13
+                data << uint32(4323) << uint32(1); // 14
+                data << uint32(4324) << uint32(1); // 15
+                data << uint32(4325) << uint32(1); // 16 
+                data << uint32(4317) << uint32(1); // 17
+
+                data << uint32(4301) << uint32(1); // 18
+                data << uint32(4296) << uint32(1); // 19
+                data << uint32(4306) << uint32(1); // 20
+                data << uint32(4311) << uint32(1); // 21
+                data << uint32(4294) << uint32(1); // 22
+                data << uint32(4243) << uint32(1); // 23
+                data << uint32(4345) << uint32(1); // 24
             }
             break;
         default:
@@ -11383,6 +11451,69 @@ InventoryResult Player::CanUseItem( Item *pItem, bool not_loading ) const
 {
     if (pItem)
     {
+        /*  Flying Everywhere   */
+        if (sWorld.getConfig(CONFIG_BOOL_ALLOW_FLYING_MOUNTS_EVERYWHERE))
+        {
+            ItemPrototype const *iProto = pItem->GetProto();
+            if (iProto)
+            {
+                for(int i = 0; i < 5; i++)
+                {
+                    SpellEntry const *sEntry = sSpellStore.LookupEntry(iProto->Spells[i].SpellId);
+                    if (sEntry)
+                    {
+                        Player* player = ((Player*)this);
+                        if(isFlyingSpell(sEntry))
+                        {
+                            if(player->HasAuraTypeFlyingSpell())
+                                player->RemoveFlyingSpells();
+                            else if(player->HasAuraTypeFlyingFormSpell())
+                                player->RemoveFlyingFormSpells();
+                            else if(player->HasAuraTypeRunningFormSpell())
+                                player->RemoveRunningFormSpells();
+
+                            if(player->CanUseFlyingMounts(sEntry))
+                            {
+                                SpellAuraHolder* holder = CreateSpellAuraHolder(sEntry,player,player);
+                                for (int j = 0; j < MAX_EFFECT_INDEX; ++j)
+                                {
+                                    Aura* aur = CreateAura(sEntry, SpellEffectIndex(j), NULL, holder, player, player, NULL);
+                                    holder->AddAura(aur,SpellEffectIndex(j));
+                                }
+                                player->AddSpellAuraHolder(holder);
+                            }
+                            return EQUIP_ERR_OK;
+                        }
+                        else if(isFlyingFormSpell(sEntry))
+                        {
+                            if(player->HasAuraTypeFlyingSpell())
+                                player->RemoveFlyingSpells();
+                            else if(player->HasAuraTypeFlyingFormSpell())
+                                player->RemoveFlyingFormSpells();
+                            /*else if(player->HasAuraTypeRunningFormSpell())
+                                player->RemoveRunningFormSpells();*/
+
+                            if(player->CanUseFlyingMounts(sEntry))
+                            {
+                                SpellAuraHolder* holder = CreateSpellAuraHolder(sEntry,player,player);
+                                for (int j = 0; j < MAX_EFFECT_INDEX; ++j)
+                                {
+                                    Aura* aur = CreateAura(sEntry, SpellEffectIndex(j), NULL, holder, player, player, NULL);
+                                    holder->AddAura(aur,SpellEffectIndex(j));
+                                }
+                                player->AddSpellAuraHolder(holder);
+                            }
+                            return EQUIP_ERR_OK;
+                        }
+                        else if (isRunningSpell(sEntry) || isRunningFormSpell(sEntry))
+                        {
+                            player->RemoveAllFlyingSpells();
+                            return EQUIP_ERR_OK;
+                        }
+                    }
+                }
+            }
+        }
         DEBUG_LOG( "STORAGE: CanUseItem item = %u", pItem->GetEntry());
 
         if (!isAlive() && not_loading)
@@ -12306,6 +12437,28 @@ void Player::DestroyItemCount( Item* pItem, uint32 &count, bool update )
 {
     if(!pItem)
         return;
+
+    /*  Flying Everywhere   */
+    if (sWorld.getConfig(CONFIG_BOOL_ALLOW_FLYING_MOUNTS_EVERYWHERE))
+    {
+        ItemPrototype const *pProto = sObjectMgr.GetItemPrototype(pItem->GetEntry());
+        if (pProto)
+        {
+            for(int i = 0; i < 5; i++)
+            {
+                SpellEntry const *sEntry = sSpellStore.LookupEntry(pProto->Spells[i].SpellId);
+                if(!sEntry)
+                    continue;
+
+                if (isFlyingSpell(sEntry) || isFlyingFormSpell(sEntry))
+                {
+                    pItem->SetSpellCharges(0, 1);
+                    pItem->SetState(ITEM_CHANGED, this);
+                    return;
+                }
+            }
+        }
+    }
 
     DEBUG_LOG( "STORAGE: DestroyItemCount item (GUID: %u, Entry: %u) count = %u", pItem->GetGUIDLow(),pItem->GetEntry(), count);
 
@@ -17823,7 +17976,7 @@ void Player::ConvertInstancesToGroup(Player *player, Group *group, ObjectGuid pl
 
     // if the player's not online we don't know what binds it has
     if (!player || !group || has_binds)
-        CharacterDatabase.PExecute("INSERT INTO group_instance SELECT guid, instance, permanent FROM character_instance WHERE guid = '%u'", player_lowguid);
+        CharacterDatabase.PExecute("REPLACE INTO group_instance SELECT guid, instance, permanent FROM character_instance WHERE guid = '%u'", player_lowguid);
 
     // the following should not get executed when changing leaders
     if (!player || has_solo)
@@ -18706,37 +18859,97 @@ void Player::_SaveStats()
     if(!sWorld.getConfig(CONFIG_UINT32_MIN_LEVEL_STAT_SAVE) || getLevel() < sWorld.getConfig(CONFIG_UINT32_MIN_LEVEL_STAT_SAVE))
         return;
 
-    static SqlStatementID delStats ;
-    static SqlStatementID insertStats ;
+	std::ostringstream equipmentCache;
 
-    SqlStatement stmt = CharacterDatabase.CreateStatement(delStats, "DELETE FROM character_stats WHERE guid = ?");
-    stmt.PExecute(GetGUIDLow());
+    for(uint16 i = 0; i < m_valuesCount; ++i )
+    {
+        equipmentCache << GetUInt32Value(i) << " ";
+    }
 
-    stmt = CharacterDatabase.CreateStatement(insertStats, "INSERT INTO character_stats (guid, maxhealth, maxpower1, maxpower2, maxpower3, maxpower4, maxpower5, maxpower6, maxpower7, "
+    std::string sql_name = m_name;
+    CharacterDatabase.escape_string(sql_name);
+
+    std::ostringstream data_armory;
+    for(uint16 i = 0; i < m_valuesCount; i++)
+    {
+	    data_armory << GetUInt32Value(i) << " ";
+    }
+
+    CharacterDatabase.PExecute("DELETE FROM character_stats WHERE guid = '%u'", GetGUIDLow());
+    std::ostringstream ss;
+    ss << "INSERT INTO character_stats (guid, maxhealth, maxpower1, maxpower2, maxpower3, maxpower4, maxpower5, maxpower6, maxpower7, "
         "strength, agility, stamina, intellect, spirit, armor, resHoly, resFire, resNature, resFrost, resShadow, resArcane, "
-        "blockPct, dodgePct, parryPct, critPct, rangedCritPct, spellCritPct, attackPower, rangedAttackPower, spellPower) "
-        "VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-
-    stmt.addUInt32(GetGUIDLow());
-    stmt.addUInt32(GetMaxHealth());
+        "blockPct, dodgePct, parryPct, critPct, rangedCritPct, spellCritPct, attackPower, rangedAttackPower, spellPower, "
+       "apmelee, ranged, blockrating, defrating, dodgerating, parryrating, resilience, manaregen, "
+       "melee_hitrating, melee_critrating, melee_hasterating, melee_mainmindmg, melee_mainmaxdmg, "
+       "melee_offmindmg, melee_offmaxdmg, melee_maintime, melee_offtime, ranged_critrating, ranged_hasterating, "
+       "ranged_hitrating, ranged_mindmg, ranged_maxdmg, ranged_attacktime, "
+       "spell_hitrating, spell_critrating, spell_hasterating, spell_bonusdmg, spell_bonusheal, spell_critproc, account, name, race, class, gender, level, map, money, totaltime, online, arenaPoints, totalHonorPoints, totalKills, equipmentCache, specCount, activeSpec, data) VALUES ("
+        << GetGUIDLow() << ", "
+        << GetMaxHealth() << ", ";
     for(int i = 0; i < MAX_POWERS; ++i)
-        stmt.addUInt32(GetMaxPower(Powers(i)));
+        ss << GetMaxPower(Powers(i)) << ", ";
     for(int i = 0; i < MAX_STATS; ++i)
-        stmt.addFloat(GetStat(Stats(i)));
+        ss << GetStat(Stats(i)) << ", ";
     // armor + school resistances
     for(int i = 0; i < MAX_SPELL_SCHOOL; ++i)
-        stmt.addUInt32(GetResistance(SpellSchools(i)));
-    stmt.addFloat(GetFloatValue(PLAYER_BLOCK_PERCENTAGE));
-    stmt.addFloat(GetFloatValue(PLAYER_DODGE_PERCENTAGE));
-    stmt.addFloat(GetFloatValue(PLAYER_PARRY_PERCENTAGE));
-    stmt.addFloat(GetFloatValue(PLAYER_CRIT_PERCENTAGE));
-    stmt.addFloat(GetFloatValue(PLAYER_RANGED_CRIT_PERCENTAGE));
-    stmt.addFloat(GetFloatValue(PLAYER_SPELL_CRIT_PERCENTAGE1));
-    stmt.addUInt32(GetUInt32Value(UNIT_FIELD_ATTACK_POWER));
-    stmt.addUInt32(GetUInt32Value(UNIT_FIELD_RANGED_ATTACK_POWER));
-    stmt.addUInt32(GetBaseSpellPowerBonus());
-
-    stmt.Execute();
+        ss << GetResistance(SpellSchools(i)) << ",";
+    ss << GetFloatValue(PLAYER_BLOCK_PERCENTAGE) << ", "
+      << GetFloatValue(PLAYER_DODGE_PERCENTAGE) << ", "
+      << GetFloatValue(PLAYER_PARRY_PERCENTAGE) << ", "
+      << GetFloatValue(PLAYER_CRIT_PERCENTAGE) << ", "
+      << GetFloatValue(PLAYER_RANGED_CRIT_PERCENTAGE) << ", "
+      << GetFloatValue(PLAYER_SPELL_CRIT_PERCENTAGE1) << ", "
+      << GetUInt32Value(UNIT_FIELD_ATTACK_POWER) << ", "
+      << GetUInt32Value(UNIT_FIELD_RANGED_ATTACK_POWER) << ", "
+      << GetBaseSpellPowerBonus() << ", "
+      << (GetUInt32Value(INFINITY_AP_MELEE_1)+GetUInt32Value(INFINITY_AP_MELEE_2)) << ", "
+      << (GetUInt32Value(INFINITY_AP_RANGED_1)+GetUInt32Value(INFINITY_AP_RANGED_2)) << ", "
+      << GetUInt32Value(INFINITY_BLOCKRATING) << ", "
+      << GetUInt32Value(INFINITY_DEFRATING) << ", "
+      << GetUInt32Value(INFINITY_DODGERATING) << ", "
+      << GetUInt32Value(INFINITY_PARRYRATING) << ", "
+      << GetUInt32Value(INFINITY_RESILIENCE) << ", "
+      << GetFloatValue(INFINITY_MANAREGEN) << ", "
+      << GetUInt32Value(INFINITY_MELEE_HITRATING) << ", "
+      << GetUInt32Value(INFINITY_MELEE_CRITRATING) << ", "
+      << GetUInt32Value(INFINITY_MELEE_HASTERATING) << ", "
+      << GetFloatValue(INFINITY_MELEE_MAINMINDMG) << ", "
+      << GetFloatValue(INFINITY_MELEE_MAINMAXDMG) << ", "
+      << GetFloatValue(INFINITY_MELEE_OFFMINDMG) << ", "
+      << GetFloatValue(INFINITY_MELEE_OFFMAXDMG) << ", "
+      << GetFloatValue(INFINITY_MELLE_MAINTIME) << ", "
+      << GetFloatValue(INFINITY_MELLE_OFFTIME) << ", "
+      << GetUInt32Value(INFINITY_RANGED_CRITRATING) << ", "
+      << GetUInt32Value(INFINITY_RANGED_HASTERATING) << ", "
+      << GetUInt32Value(INFINITY_RANGED_HITRATING) << ", "
+      << GetFloatValue(INFINITY_RANGED_MINDMG) << ", "
+      << GetFloatValue(INFINITY_RANGED_MAXDMG) << ", "
+      << GetFloatValue(INFINITY_RANGED_ATTACKTIME) << ", "
+      << GetUInt32Value(INFINITY_SPELL_HITRATING) << ", "
+      << GetUInt32Value(INFINITY_SPELL_CRITRATING) << ", "
+      << GetUInt32Value(INFINITY_SPELL_HASTERATING) << ", "
+      << GetUInt32Value(INFINITY_SPELL_BONUSDMG) << ", "
+      << GetUInt32Value(INFINITY_SPELL_BONUSHEAL) << ", "
+      << GetFloatValue(INFINITY_SPELL_CRITPROC) << ", "
+	  << GetSession()->GetAccountId() << ", '"
+      << sql_name << "', "
+      << (uint32)getRace() << ", "
+      << (uint32)getClass() << ", "
+      << (uint32)getGender() << ", "
+      << getLevel() << ", "
+	  << GetMapId() << ", "
+	  << GetMoney() << ", "
+	  << m_Played_time[PLAYED_TIME_TOTAL] << ", "
+	  << (IsInWorld() ? 1 : 0) << ", "
+	  << GetArenaPoints() << ", "
+      << GetHonorPoints() << ", "
+	  << GetUInt32Value(PLAYER_FIELD_LIFETIME_HONORBALE_KILLS) << ", '"
+	  << equipmentCache.str().c_str() << "',"
+	  << uint32(m_specsCount) << ", "
+      << uint32(m_activeSpec) << ", '"
+	  << data_armory.str().c_str() << "')";
+    CharacterDatabase.Execute( ss.str().c_str() );
 }
 
 void Player::outDebugStatsValues() const
@@ -22421,6 +22634,11 @@ bool Player::CanStartFlyInArea(uint32 mapid, uint32 zone, uint32 area) const
 {
     if (isGameMaster())
         return true;
+
+    /*  Flying Everywhere   */
+    if (sWorld.getConfig(CONFIG_BOOL_ALLOW_FLYING_MOUNTS_EVERYWHERE))
+        return true;
+
     // continent checked in SpellMgr::GetSpellAllowedInLocationError at cast and area update
     uint32 v_map = GetVirtualMapForMapAndZone(mapid, zone);
 
@@ -22941,6 +23159,54 @@ void Player::UpdateFallInformationIfNeed( MovementInfo const& minfo,uint16 opcod
 {
     if (m_lastFallTime >= minfo.GetFallTime() || m_lastFallZ <= minfo.GetPos()->z || opcode == MSG_MOVE_FALL_LAND)
         SetFallInformation(minfo.GetFallTime(), minfo.GetPos()->z);
+}
+
+///PVP Token
+void Player::ReceiveToken()
+{
+   if(!sWorld.getConfig(CONFIG_BOOL_PVP_TOKEN_ENABLE))
+       return;
+
+   uint8 MapRestriction = sWorld.getConfig(CONFIG_FLOAT_PVP_TOKEN_RESTRICTION);
+
+   if( MapRestriction == 1 && !InBattleGround() && !HasByteFlag(UNIT_FIELD_BYTES_2, 1, UNIT_BYTE2_FLAG_FFA_PVP) ||
+       MapRestriction == 2 && !HasByteFlag(UNIT_FIELD_BYTES_2, 1, UNIT_BYTE2_FLAG_FFA_PVP) ||
+       MapRestriction == 3 && !InBattleGround())
+       return;
+
+   uint32 itemID = sWorld.getConfig(CONFIG_FLOAT_PVP_TOKEN_ITEMID);
+   uint32 itemCount = sWorld.getConfig(CONFIG_FLOAT_PVP_TOKEN_ITEMCOUNT);
+   uint32 goldAmount = sWorld.getConfig(CONFIG_FLOAT_PVP_TOKEN_GOLD);
+   uint32 honorAmount = sWorld.getConfig(CONFIG_FLOAT_PVP_TOKEN_HONOR);  
+   uint32 arenaAmount = sWorld.getConfig(CONFIG_FLOAT_PVP_TOKEN_ARENA);
+
+   ItemPosCountVec dest;
+   InventoryResult msg = CanStoreNewItem( NULL_BAG, NULL_SLOT, dest, itemID, itemCount);
+   if( msg != EQUIP_ERR_OK )   // convert to possible store amount
+   {
+       SendEquipError( msg, NULL, NULL );
+       return;
+   }
+
+   Item* item = StoreNewItem( dest, itemID, true, Item::GenerateItemRandomPropertyId(itemID));  
+   SendNewItem(item,itemCount,true,false);  
+ 
+  if( honorAmount > 0 )  
+      ModifyHonorPoints(honorAmount);  
+      SaveToDB();  
+      return;  
+ 
+  if( goldAmount > 0 )  
+      ModifyMoney(goldAmount);  
+      SaveGoldToDB();  
+      return; 
+ 
+  if( arenaAmount > 0 )  
+      ModifyArenaPoints(arenaAmount); 
+      SaveToDB(); 
+      return;
+
+   ChatHandler(this).PSendSysMessage(LANG_YOU_RECEIVE_TOKEN);
 }
 
 void Player::UnsummonPetTemporaryIfAny()
@@ -23716,6 +23982,146 @@ void Player::_LoadRandomBGStatus(QueryResult *result)
         m_IsBGRandomWinner = true;
         delete result;
     }
+}
+
+/*  Flying Everywhere   */
+void Player::FlyingMountsSpellsToItems()
+{
+   for (PlayerSpellMap::const_iterator itr = m_spells.begin(); itr != m_spells.end(); ++itr)
+   {
+       SpellEntry const *sEntry = sSpellStore.LookupEntry(itr->first);
+       if(!sEntry)
+           continue;
+
+       if(! (isFlyingSpell(sEntry) || isFlyingFormSpell(sEntry)) )
+           continue;
+
+       uint32 itemId = 0;
+       for (uint32 id = 0; id < sItemStorage.MaxEntry; id++)
+       {
+           ItemPrototype const *pProto = sObjectMgr.GetItemPrototype(id);
+           if(!pProto)
+               continue;
+
+           for(int i = 0; i < 5; i++)
+           {
+               if(pProto->Spells[i].SpellId == itr->first)
+               {
+                   itemId = id;
+                   break;
+               }
+           }
+       }
+       if(!HasItemCount(itemId, 1, false))
+       {
+           //Adding items
+           uint32 noSpaceForCount = 0;
+
+           // check space and find places
+           ItemPosCountVec dest;
+           uint8 msg = CanStoreNewItem( NULL_BAG, NULL_SLOT, dest, itemId, 1, &noSpaceForCount );
+
+           if(!dest.empty())                         // can't add any
+           {
+               Item* item = StoreNewItem( dest, itemId, true, Item::GenerateItemRandomPropertyId(itemId));
+               SendNewItem(item, 1,false,false);
+           }
+       }
+   }
+
+   for(int i = EQUIPMENT_SLOT_START; i < INVENTORY_SLOT_ITEM_END; ++i)
+   {
+       Item *pItem = GetItemByPos( INVENTORY_SLOT_BAG_0, i );
+       if(!pItem)
+           continue;
+
+       ItemPrototype const *pProto = sObjectMgr.GetItemPrototype(pItem->GetEntry());
+       if(!pProto)
+           continue;
+
+       for(int i = 0; i < 5; i++)
+       {
+           SpellEntry const *sEntry = sSpellStore.LookupEntry(pProto->Spells[i].SpellId);
+           if(!sEntry)
+               continue;
+
+           if(! (isFlyingSpell(sEntry) || isFlyingFormSpell(sEntry)) )
+               continue;
+
+           if(HasSpell(pProto->Spells[i].SpellId))
+           {
+               uint16 RindingSkill = GetSkillValue(SKILL_RIDING);
+               removeSpell(pProto->Spells[i].SpellId, false, false);
+               SetSkill(SKILL_RIDING, RindingSkill, 300);
+               break;
+           }
+
+       }        
+   }
+
+   for(int i = INVENTORY_SLOT_BAG_START; i < INVENTORY_SLOT_BAG_END; ++i)
+   {
+       if(Bag* pBag = (Bag*)GetItemByPos( INVENTORY_SLOT_BAG_0, i ))
+       {
+           for(uint32 j = 0; j < pBag->GetBagSize(); ++j)
+           {
+               Item* pItem = GetItemByPos( i, j );
+               if(!pItem)
+                   continue;
+
+               ItemPrototype const *pProto = sObjectMgr.GetItemPrototype(pItem->GetEntry());
+               if(!pProto)
+                   continue;
+
+               for(int i = 0; i < 5; i++)
+               {
+                   SpellEntry const *sEntry = sSpellStore.LookupEntry(pProto->Spells[i].SpellId);
+                   if(!sEntry)
+                       continue;
+
+                   if(! (isFlyingSpell(sEntry) || isFlyingFormSpell(sEntry)) )
+                       continue;
+
+                   if(HasSpell(pProto->Spells[i].SpellId))
+                   {
+                       uint16 RindingSkill = GetSkillValue(SKILL_RIDING);
+                       removeSpell(pProto->Spells[i].SpellId, false, false);
+                       SetSkill(SKILL_RIDING, RindingSkill, 300);
+                       break;
+                   }
+               }
+           }
+       }
+   }
+}
+
+bool Player::CanUseFlyingMounts(SpellEntry const* sEntry)
+{
+   if(!GetFlyingMountTimer())
+       return false;
+
+   uint32 v_map = GetVirtualMapForMapAndZone(GetMapId(), GetZoneId());
+   MapEntry const* mapEntry = sMapStore.LookupEntry(v_map);
+   if(!getAttackers().empty())
+   {
+       WorldPacket data(SMSG_CAST_FAILED, (4+1+1));
+       data << uint8(0);
+       data << uint32(sEntry->Id);
+       data << uint8(SPELL_FAILED_TARGET_IN_COMBAT); 
+       GetSession()->SendPacket(&data);
+       return false;
+   }
+   if( (!mapEntry)/* || (mapEntry->Instanceable())*/ || (mapEntry->IsDungeon()) ||
+       (mapEntry->IsRaid()) || (mapEntry->IsBattleArena()) || (mapEntry->IsBattleGround()) )
+   {
+       WorldPacket data(SMSG_CAST_FAILED, (4+1+1));
+       data << uint8(0);
+       data << uint32(sEntry->Id);
+       data << uint8(SPELL_FAILED_NOT_HERE); 
+       GetSession()->SendPacket(&data);
+       return false;
+   }
+   return true;
 }
 
 // Refer-A-Friend

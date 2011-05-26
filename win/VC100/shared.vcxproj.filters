@@ -78,9 +78,16 @@
     <ClCompile Include="..\..\src\shared\Common.cpp" />
     <ClCompile Include="..\..\src\shared\ServiceWin32.cpp" />
     <ClCompile Include="..\..\src\shared\Threading.cpp" />
+<<<<<<< HEAD
 	<ClCompile Include="..\..\src\shared\Database\SqlPreparedStatement.cpp">
 	  <Filter>Database</Filter>
 	</ClCompile>
+=======
+    <ClCompile Include="..\..\src\shared\vmap\MapTree.cpp" />
+    <ClCompile Include="..\..\src\shared\vmap\ModelInstance.cpp" />
+    <ClCompile Include="..\..\src\shared\vmap\VMapManager2.cpp" />
+    <ClCompile Include="..\..\src\shared\vmap\WorldModel.cpp" />
+>>>>>>> 7702c54fef0cef4a327a3730ee9abd7ad5530c76
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\shared\Database\Database.h">
@@ -176,9 +183,16 @@
     <ClInclude Include="..\..\src\shared\revision_sql.h" />
     <ClInclude Include="..\..\src\shared\ServiceWin32.h" />
     <ClInclude Include="..\..\src\shared\Threading.h" />
+<<<<<<< HEAD
 	<ClInclude Include="..\..\src\shared\Database\SqlPreparedStatement.h">
 	  <Filter>Database</Filter>
 	</ClInclude>
+=======
+    <ClInclude Include="..\..\src\shared\vmap\MapTree.h" />
+    <ClInclude Include="..\..\src\shared\vmap\ModelInstance.h" />
+    <ClInclude Include="..\..\src\shared\vmap\VMapManager2.h" />
+    <ClInclude Include="..\..\src\shared\vmap\WorldModel.h" />
+>>>>>>> 7702c54fef0cef4a327a3730ee9abd7ad5530c76
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="..\..\src\shared\revision.h" />
