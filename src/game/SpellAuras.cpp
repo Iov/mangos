@@ -2099,7 +2099,7 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
                     case 28834:                             // Mark of Rivendare
                     case 28835:                             // Mark of Zeliek
                     {
-                         uint8 stacks = GetStackAmount();
+                         uint32 stacks = GetStackAmount();
                          int32 damage = 0;
 
                          if (stacks == 2)
