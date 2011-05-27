@@ -695,7 +695,7 @@ bool Transport::AddNPCPassenger(uint32 entry, float x, float y, float z, float o
     if (!pCreature->Create(map->GenerateLocalLowGuid(HIGHGUID_UNIT), pos, cinfo))
     {
         delete pCreature;
-        return 0;
+        return false;
     }
 
     pCreature->SetTransport(this);
@@ -719,7 +719,7 @@ bool Transport::AddNPCPassenger(uint32 entry, float x, float y, float z, float o
     {
         sLog.outError("Creature (guidlow %d, entry %d) not created. Suggested coordinates isn't valid (X: %f Y: %f)", pCreature->GetGUIDLow(), pCreature->GetEntry(), pCreature->GetPositionX(), pCreature->GetPositionY());
         delete pCreature;
-        return 0;
+        return false;
     }
 
     map->Add(pCreature);
