@@ -168,13 +168,6 @@ extern int main(int argc, char **argv)
         return 1;
     }
 
-    if (!sConfig.SetSource(mc_cfg_file))
-    {
-        sLog.outError("Could not find mangchat configuration file %s.", mc_cfg_file);
-        Log::WaitBeforeContinueIfNeed();
-        return 1;
-    }
-
 #ifndef WIN32                                               // posix daemon commands need apply after config read
     switch (serviceDaemonMode)
     {
