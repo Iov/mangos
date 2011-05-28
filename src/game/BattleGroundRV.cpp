@@ -195,36 +195,3 @@ void BattleGroundRV::FillInitialWorldStates(WorldPacket &data, uint32& count)
     FillInitialWorldState(data, count, 0xe10, GetAlivePlayersCountByTeam(HORDE));
     FillInitialWorldState(data, count, 0xe1a, 1);
 }
-
-void BattleGroundRV::Reset()
-{
-    //call parent's class reset
-    BattleGround::Reset();
-    m_uiTeleport = 22000;
-}
-
-void BattleGroundRV::HandleAreaTrigger(Player * Source, uint32 Trigger)
-{
-    if (GetStatus() != STATUS_IN_PROGRESS)
-        return;
-
-    switch(Trigger)
-    {
-        case 5224:
-        case 5226:
-        case 5473:
-        case 5474:
-            break;
-        default:
-            sLog.outError("WARNING: Unhandled AreaTrigger in Battleground: %u", Trigger);
-            Source->GetSession()->SendAreaTriggerMessage("Warning: Unhandled AreaTrigger in Battleground: %u", Trigger);
-            break;
-    }
-}
-
-void BattleGroundRV::FillInitialWorldStates(WorldPacket &data, uint32& count)
-{
-    FillInitialWorldState(data, count, 0xe11, GetAlivePlayersCountByTeam(ALLIANCE));
-    FillInitialWorldState(data, count, 0xe10, GetAlivePlayersCountByTeam(HORDE));
-    FillInitialWorldState(data, count, 0xe1a, 1);
- }
