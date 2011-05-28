@@ -64,12 +64,12 @@ void usage(const char *prog)
     sLog.outString("Usage: \n %s [<options>]\n"
         "    -v, --version            print version and exist\n\r"
         "    -c config_file           use config_file as configuration file\n\r"
+        "    -m mangchat_config_file  use mangchat_config_file as configuration file for mangchat\n\r"
         #ifdef WIN32
         "    Running as service functions:\n\r"
         "    -s run                   run as service\n\r"
         "    -s install               install service\n\r"
         "    -s uninstall             uninstall service\n\r"
-        "    -m MangChat_config       use Mangchat_config as configuration file for MangChat\n\r"
         #else
         "    Running as daemon functions:\n\r"
         "    -s run                   run as daemon\n\r"
@@ -164,6 +164,13 @@ extern int main(int argc, char **argv)
     if (!sConfig.SetSource(cfg_file))
     {
         sLog.outError("Could not find configuration file %s.", cfg_file);
+        Log::WaitBeforeContinueIfNeed();
+        return 1;
+    }
+
+    if (!sConfig.SetSource(mc_cfg_file))
+    {
+        sLog.outError("Could not find mangchat configuration file %s.", mc_cfg_file);
         Log::WaitBeforeContinueIfNeed();
         return 1;
     }
