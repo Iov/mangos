@@ -18,6 +18,8 @@
 #ifndef __BATTLEGROUNDDS_H
 #define __BATTLEGROUNDDS_H
 
+#define WATERFALL_EVENT 250
+
 class BattleGround;
 
 class BattleGroundDSScore : public BattleGroundScore
@@ -25,7 +27,6 @@ class BattleGroundDSScore : public BattleGroundScore
     public:
         BattleGroundDSScore() {};
         virtual ~BattleGroundDSScore() {};
-        //TODO fix me
 };
 
 class BattleGroundDS : public BattleGround
@@ -50,6 +51,13 @@ class BattleGroundDS : public BattleGround
         void HandleKillPlayer(Player* player, Player *killer);
         bool HandlePlayerUnderMap(Player * plr);
     private:
+        bool pushbackCheck;
         uint32 m_uiKnockback;
+
+        bool teleportCheck;
+        uint32 m_uiTeleport;
+
+        bool waterfallActivated;
+        uint32 m_uiWaterfall;
 };
 #endif
