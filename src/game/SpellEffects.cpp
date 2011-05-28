@@ -4527,6 +4527,10 @@ void Spell::EffectHeal(SpellEffectIndex /*eff_idx*/)
             }
         }
 
+        // Divine Hymn
+        if(m_spellInfo->Id == 64844)
+            addhealth += caster->SpellBaseHealingBonusDone(GetSpellSchoolMask(m_spellInfo)) * m_spellInfo->EffectCoeffs[0];
+
         addhealth = caster->SpellHealingBonusDone(unitTarget, m_spellInfo, addhealth, HEAL);
         addhealth = unitTarget->SpellHealingBonusTaken(caster, m_spellInfo, addhealth, HEAL);
 
