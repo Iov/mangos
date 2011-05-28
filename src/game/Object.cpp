@@ -1340,6 +1340,12 @@ bool WorldObject::IsWithinLOSInMap(const WorldObject* obj) const
     float ox,oy,oz;
     obj->GetPosition(ox,oy,oz);
 
+    if(GetMapId() == 617) // Dalaran Arena Waterfall
+        if(GameObject * pWaterfall = ((WorldObject*)this)->GetClosestGameObjectWithEntry(this, 194395/*191877*/, 60))
+            if(pWaterfall->isSpawned())
+                if(pWaterfall->IsInBetween(this, obj, pWaterfall->GetObjectBoundingRadius()))
+                    return false;
+
     if(GetMapId() == 618)
     {
         for(int i = 0; i < 4; ++i)
