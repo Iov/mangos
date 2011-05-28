@@ -2211,7 +2211,6 @@ void Player::Regenerate(Powers power, uint32 diff)
         {
             if (HasAuraType(SPELL_AURA_STOP_NATURAL_MANA_REGEN))
                 break;
-
             bool recentCast = IsUnderLastManaUseEffect();
             float ManaIncreaseRate = sWorld.getConfig(CONFIG_FLOAT_RATE_POWER_MANA);
             if (recentCast)
@@ -9302,17 +9301,23 @@ void Player::SendTalentWipeConfirm(ObjectGuid guid)
 void Player::SendPetSkillWipeConfirm()
 {
     Pet* pet = GetPet();
-    if (!pet || pet->getPetType() != HUNTER_PET || pet->m_usedTalentCount == 0)
+
+    if(!pet)
         return;
 
+    if (pet->getPetType() != HUNTER_PET || pet->m_usedTalentCount == 0)
+        return;
+
+    CharmInfo* charmInfo = pet->GetCharmInfo();
+
+    if (!charmInfo)
+    {
+        sLog.outError("WorldSession::HandlePetUnlearnOpcode: %s is considered pet-like but doesn't have a charminfo!", pet->GetGuidStr().c_str());
+        return;
+    }
     pet->resetTalents();
     SendTalentsInfoData(true);
-/*
-    WorldPacket data(SMSG_PET_UNLEARN_CONFIRM, (8+4));
-    data << ObjectGuid(pet->GetObjectGuid());
-    data << uint32(pet->resetTalentsCost());
-    GetSession()->SendPacket( &data );
-*/
+
 }
 
 /*********************************************************/
@@ -11898,7 +11903,7 @@ Item* Player::EquipItem( uint16 pos, Item *pItem, bool update )
 
             _ApplyItemMods(pItem, slot, true);
 
-            if(pProto && isInCombat()&& pProto->Class == ITEM_CLASS_WEAPON && m_weaponChangeTimer == 0)
+            if(pProto && isInCombat()&& (pProto->Class == ITEM_CLASS_WEAPON || pProto->InventoryType == INVTYPE_RELIC) && m_weaponChangeTimer == 0)
             {
                 uint32 cooldownSpell = SPELL_ID_WEAPON_SWITCH_COOLDOWN_1_5s;
 
