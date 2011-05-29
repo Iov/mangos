@@ -10704,6 +10704,11 @@ void Spell::EffectKnockBack(SpellEffectIndex eff_idx)
         if (m_caster->HasAura(62132))
             return;
 
+    // Blast Wave
+     if (m_spellInfo->SpellFamilyName == SPELLFAMILY_MAGE && m_spellInfo->SpellFamilyFlags & UI64LIT(0x0004000000000))
+         if (m_caster->HasAura(62126)) // Glyph of Blast Wave
+             return;
+
     unitTarget->KnockBackFrom(m_caster,float(m_spellInfo->EffectMiscValue[eff_idx])/10,float(damage)/30);
 }
 
