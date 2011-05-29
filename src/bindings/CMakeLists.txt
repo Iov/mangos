@@ -17,3 +17,4 @@
 #
 
 add_subdirectory(scriptdev2)
+add_subdirectory(universal)
