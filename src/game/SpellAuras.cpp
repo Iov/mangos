@@ -2235,7 +2235,7 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
                             int32 damage = 50 << GetStackAmount();
                             target->CastCustomSpell(target, 63338, &damage, 0, 0, true, 0, 0, caster->GetObjectGuid()); // damage spell
                             damage = damage >> 1;
-                            target->CastCustomSpell(target, 63337, &damage, 0, 0, true, 0, 0, caster->GetObjectGuid()); // manareg spell
+                            target->CastCustomSpell(target, 63337, &damage, 0, 0, true);
                         }
                         return;
                     case 63624:                             // Learn a Second Talent Specialization
@@ -3612,7 +3612,7 @@ void Aura::HandleAuraModShapeshift(bool apply, bool Real)
         target->RemoveSpellsCausingAura(SPELL_AURA_MOD_SHAPESHIFT, GetHolder());
 
         // need send to client not form active state, or at re-apply form client go crazy
-        target->SendForcedObjectUpdate();
+        // target->SendForcedObjectUpdate();
 
         if (modelid > 0)
             target->SetDisplayId(modelid);
@@ -3620,10 +3620,10 @@ void Aura::HandleAuraModShapeshift(bool apply, bool Real)
         // now only powertype must be set
         switch (form)
         {
-            case FORM_CAT:
             case FORM_SHADOW_DANCE:
-                PowerType = POWER_ENERGY;
                 target->SetByteValue(UNIT_FIELD_BYTES_2, 3, uint8(FORM_STEALTH));
+            case FORM_CAT:
+                PowerType = POWER_ENERGY;
                 break;
             case FORM_BEAR:
             case FORM_DIREBEAR:
@@ -9996,6 +9996,31 @@ void SpellAuraHolder::HandleSpellSpecificBoosts(bool apply)
                         return;
                     break;
                 }
+                case 44614:                                 // Frostfire Bolt
+                case 47610:
+                {
+                    if (apply)
+                    {
+                        Unit* caster = GetCaster();
+                        if(!caster)
+                            return;
+
+                        Unit::AuraList const& auras = caster->GetAurasByType(SPELL_AURA_ADD_FLAT_MODIFIER);
+                        for(Unit::AuraList::const_iterator itr = auras.begin(); itr != auras.end(); ++itr)
+                        {
+                            // Permafrost
+                            if ((*itr)->GetSpellProto()->SpellFamilyName == SPELLFAMILY_MAGE
+                                && (*itr)->GetSpellProto()->SpellIconID == 143)
+                            {
+                                // custom cast code
+                                int32 basepoints0 = (*itr)->GetSpellProto()->CalculateSimpleValue(EFFECT_INDEX_2);
+                                caster->CastCustomSpell(m_target, 68391, &basepoints0, NULL, NULL, true, NULL);
+                                return;
+                            }
+                        }
+                    }
+                    return;
+                }
                 default:
                     return;
             }
@@ -10166,11 +10191,28 @@ void SpellAuraHolder::HandleSpellSpecificBoosts(bool apply)
         }
         case SPELLFAMILY_DRUID:
         {
+            // Rejuvenation
+            if (GetSpellProto()->SpellFamilyFlags & UI64LIT(0x0000000000000010))
+            {
+                Unit* caster = GetCaster();
+                if (!caster)
+                    return;
+
+                if (caster->HasAura(64760))                 // Item - Druid T8 Restoration 4P Bonus
+                {
+                    Aura* aura = GetAuraByEffectIndex(EFFECT_INDEX_0);
+                    if (!aura)
+                        return;
+
+                    int32 heal = aura->GetModifier()->m_amount;
+                    caster->CastCustomSpell(m_target, 64801, &heal, NULL, NULL, true, NULL);
+                }
+            }
             // Barkskin
-            if (GetId() == 22812 && m_target->HasAura(63057)) // Glyph of Barkskin
-                spellId1 = 63058;                             // Glyph - Barkskin 01
-            else if (!apply && GetId() == 5229)               // Enrage (Druid Bear)
-                spellId1 = 51185;                             // King of the Jungle (Enrage damage aura)
+            else if (GetId()==22812 && m_target->HasAura(63057)) // Glyph of Barkskin
+                spellId1 = 63058;                           // Glyph - Barkskin 01
+            else if (!apply && GetId() == 5229)             // Enrage (Druid Bear)
+                spellId1 = 51185;                           // King of the Jungle (Enrage damage aura)
             else
                 return;
             break;
