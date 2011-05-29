@@ -582,6 +582,9 @@
     <ClCompile Include="..\..\src\game\GuildMgr.cpp">
       <Filter>World/Handlers</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\game\WardenHandler.cpp">
+      <Filter>World/Handlers</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\game\AccountMgr.h">
@@ -1102,6 +1105,9 @@
       <Filter>playerbot</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\game\GuildMgr.h">
+      <Filter>World/Handlers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\game\WardenHandler.h">
       <Filter>World/Handlers</Filter>
     </ClInclude>
   </ItemGroup>
