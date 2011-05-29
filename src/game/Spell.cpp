@@ -2676,7 +2676,7 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
                 if(tempTargetUnitMap.empty())
                     break;
 
-                tempTargetUnitMap.sort(TargetDistanceOrder(m_caster));
+                tempTargetUnitMap.sort(TargetDistanceOrderNear(m_caster));
 
                 //Now to get us a random target that's in the initial  range of the spell
                 uint32 t = 0;
