@@ -1,3 +1,6 @@
+-- paladin Seals - don't proc on absorb 
+UPDATE spell_proc_event SET procEx = procEx | 0x0080000 WHERE entry IN (20164, 20165, 20166); 
+
 -- aldaron the reckless loc fix Blood elf starting area fix
 DELETE FROM `creature` WHERE `id`=16294;
 INSERT INTO `creature` (`guid`,`id`,`map`,`spawnMask`,`phaseMask`,`modelid`,`equipment_id`,`position_x`,`position_y`,`position_z`,`orientation`,`spawntimesecs`,`spawndist`,`currentwaypoint`,`curhealth`,`curmana`,`DeathState`,`MovementType`) VALUES
