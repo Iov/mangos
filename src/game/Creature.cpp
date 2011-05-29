@@ -1561,6 +1561,12 @@ void Creature::SetDeathState(DeathState s)
 
 bool Creature::FallGround()
 {
+
+    // some creatures should stay levitating
+    // Kologarn (Ulduar)
+    if (GetEntry() == 32930)
+        return false;
+
     // Only if state is JUST_DIED. CORPSE_FALLING is set below and promoted to CORPSE later
     if (getDeathState() != JUST_DIED)
         return false;
