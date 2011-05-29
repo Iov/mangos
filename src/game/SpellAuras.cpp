@@ -3620,10 +3620,10 @@ void Aura::HandleAuraModShapeshift(bool apply, bool Real)
         // now only powertype must be set
         switch (form)
         {
-            case FORM_CAT:
             case FORM_SHADOW_DANCE:
-                PowerType = POWER_ENERGY;
                 target->SetByteValue(UNIT_FIELD_BYTES_2, 3, uint8(FORM_STEALTH));
+            case FORM_CAT:
+                PowerType = POWER_ENERGY;
                 break;
             case FORM_BEAR:
             case FORM_DIREBEAR:
@@ -10191,11 +10191,28 @@ void SpellAuraHolder::HandleSpellSpecificBoosts(bool apply)
         }
         case SPELLFAMILY_DRUID:
         {
+            // Rejuvenation
+            if (GetSpellProto()->SpellFamilyFlags & UI64LIT(0x0000000000000010))
+            {
+                Unit* caster = GetCaster();
+                if (!caster)
+                    return;
+
+                if (caster->HasAura(64760))                 // Item - Druid T8 Restoration 4P Bonus
+                {
+                    Aura* aura = GetAuraByEffectIndex(EFFECT_INDEX_0);
+                    if (!aura)
+                        return;
+
+                    int32 heal = aura->GetModifier()->m_amount;
+                    caster->CastCustomSpell(m_target, 64801, &heal, NULL, NULL, true, NULL);
+                }
+            }
             // Barkskin
-            if (GetId() == 22812 && m_target->HasAura(63057)) // Glyph of Barkskin
-                spellId1 = 63058;                             // Glyph - Barkskin 01
-            else if (!apply && GetId() == 5229)               // Enrage (Druid Bear)
-                spellId1 = 51185;                             // King of the Jungle (Enrage damage aura)
+            else if (GetId()==22812 && m_target->HasAura(63057)) // Glyph of Barkskin
+                spellId1 = 63058;                           // Glyph - Barkskin 01
+            else if (!apply && GetId() == 5229)             // Enrage (Druid Bear)
+                spellId1 = 51185;                           // King of the Jungle (Enrage damage aura)
             else
                 return;
             break;
