@@ -719,6 +719,10 @@ void AreaAura::Update(uint32 diff)
                 // flag for seelction is need apply aura to current iteration target
                 bool apply = true;
 
+                // The Might of Mograine must not affect scourge soldiers, must affect only players and DK bosses
+                if (GetSpellProto()->Id == 53642 && ((*tIter)->GetEntry() == 29186 || (*tIter)->GetEntry() == 29190 || (*tIter)->GetEntry() == 29219 || (*tIter)->GetEntry() == 29206))
+                    apply = false;
+
                 // we need ignore present caster self applied are auras sometime
                 // in cases if this only auras applied for spell effect
                 Unit::SpellAuraHolderBounds spair = (*tIter)->GetSpellAuraHolderBounds(GetId());
@@ -1941,6 +1945,10 @@ void Aura::TriggerSpell()
                 triggerTarget->CastSpell(triggerTarget, trigger_spell_id, true, NULL, this);
                 return;
             case 53563:                                     // Beacon of Light
+            case 63018:                                     // Searing Light (normal&heroic) (XT-002 in Ulduar)
+            case 65121:
+            case 63024:                                     // Gravity Bomb (normal&heroic)  (XT-002 in Ulduar)
+            case 64234:
                 // original caster must be target (beacon)
                 target->CastSpell(target, trigger_spell_id, true, NULL, this, target->GetObjectGuid());
                 return;
@@ -7574,6 +7582,16 @@ void Aura::HandleSchoolAbsorb(bool apply, bool Real)
                 plr->SendDirectMessage(&data);
             }
         }
+        // Shield of Runes (normal) (Runemaster Molgeim, Assembly of Iron encounter in Ulduar)
+        else if (target && spellProto->Id == 62274 && m_removeMode == AURA_REMOVE_BY_SHIELD_BREAK)
+        {
+            target->CastSpell(target, 62277, true);
+        }
+        // Shield of Runes (heroic) (Runemaster Molgeim, Assembly of Iron encounter in Ulduar)
+        else if (caster && spellProto->Id == 63489 && m_removeMode == AURA_REMOVE_BY_SHIELD_BREAK)
+        {
+            target->CastSpell(target, 63967, true);
+        }
     }
 }
 
@@ -8567,6 +8585,18 @@ void Aura::PeriodicDummyTick()
                     target->CastCustomSpell(target, 66240, &damage, NULL, NULL, true, NULL, this);
                     if (Unit* caster = GetCaster())
                         target->CastCustomSpell(caster, 66125, &heal, NULL, NULL, true, NULL, this);
+                    return;
+                }
+                case 66149:                                 // Bullet Controller Periodic (Trial of the Crusader, ->
+                case 68396:                                 // -> Twin Valkyr encounter, 10 and 25)
+                {
+                    if (GetAuraTicks() % 10 == 0)
+                        target->CastSpell(target, 66077, true);
+                    else
+                    {
+                        target->CastSpell(target, 66152, true);
+                        target->CastSpell(target, 66153, true);
+                    }
                     return;
                 }
                 case 67630:                                 // Leeching Swarm 25 man
