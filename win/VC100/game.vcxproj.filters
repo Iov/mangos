@@ -586,7 +586,11 @@
     <ClCompile Include="..\..\src\game\GuildMgr.cpp">
       <Filter>World/Handlers</Filter>
     </ClCompile>
+<<<<<<< HEAD
     <ClCompile Include="..\..\src\game\MapUpdater.cpp">
+=======
+    <ClCompile Include="..\..\src\game\WardenHandler.cpp">
+>>>>>>> master
       <Filter>World/Handlers</Filter>
     </ClCompile>
   </ItemGroup>
@@ -1109,6 +1113,9 @@
       <Filter>playerbot</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\game\GuildMgr.h">
+      <Filter>World/Handlers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\game\WardenHandler.h">
       <Filter>World/Handlers</Filter>
     </ClInclude>
   </ItemGroup>

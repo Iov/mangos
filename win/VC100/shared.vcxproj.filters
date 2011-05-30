@@ -176,10 +176,19 @@
 	<ClInclude Include="..\..\src\shared\Database\SqlPreparedStatement.h">
 	  <Filter>Database</Filter>
 	</ClInclude>
+<<<<<<< HEAD
     <ClInclude Include="..\..\src\shared\vmap\MapTree.h" />
     <ClInclude Include="..\..\src\shared\vmap\ModelInstance.h" />
     <ClInclude Include="..\..\src\shared\vmap\VMapManager2.h" />
     <ClInclude Include="..\..\src\shared\vmap\WorldModel.h" />
+=======
+    <ClCompile Include="..\..\src\shared\Database\SqlPreparedStatement.h">
+      <Filter>Database</Filter>
+    </ClCompile>
+    <ClInclude Include="..\..\src\shared\Auth\WardenKeyGeneration.h">
+      <Filter>Auth</Filter>
+    </ClInclude>
+>>>>>>> master
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="..\..\src\shared\revision.h" />

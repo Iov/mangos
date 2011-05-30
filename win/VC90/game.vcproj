@@ -1083,6 +1083,14 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\src\game\WardenHandler.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\game\WardenHandler.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\src\game\WaypointManager.cpp"
 				>
 			</File>
