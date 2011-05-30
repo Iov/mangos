@@ -1,3 +1,16 @@
+-- Start of Infinity version notes
+= Infinity_project -- History of visible changes =
+Copyright (C) 2005-2011 Infinity_project <http://127.0.0.1/>
+
+Version 1.0.00
+ * MySQL client libs updated to MySQL 6.0.0
+ * intial set up of Databases for project
+ *
+
+
+
+
+--- End of mangos versions for us --
 = MaNGOS -- History of visible changes =
 
 Copyright (C) 2005-2011 MaNGOS project <http://getmangos.com/>
