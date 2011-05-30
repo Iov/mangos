@@ -2533,6 +2533,129 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
                 }
             }
 
+            //Dawn of Light - don't hit death knights
+            if (m_spellInfo->Id == 53644)
+            {
+                if (!targetUnitMap.empty() )
+                {
+                    for (UnitList::iterator iter = targetUnitMap.begin(); iter != targetUnitMap.end(); ++iter)
+                    {
+                        if ((*iter)->GetTypeId() == TYPEID_PLAYER)
+                        {
+                            targetUnitMap.erase(iter);
+                            targetUnitMap.sort();
+                            iter = targetUnitMap.begin();
+                        }
+                        else
+                        {
+                            switch ((*iter)->GetEntry() )
+                            {
+                                case 29173: // Darion Mograine
+                                case 29199: // Koltira Deathweaver
+                                case 29204: // Orbaz Bloodbane
+                                case 29200: // Thassarian
+                                    targetUnitMap.erase(iter);
+                                    targetUnitMap.sort();
+                                    iter = targetUnitMap.begin();
+                                default:
+                                    break;
+                            }
+                        }
+                    }
+                }
+            }
+            // Molten Fury - Sartharion encounter
+            // target Lava Blazes only
+            if (m_spellInfo->Id == 60430)
+            {
+                std::list<Unit*> tempTargetUnitMap;
+                targetUnitMap.clear();
+                FillAreaTargets(tempTargetUnitMap, radius, PUSH_DEST_CENTER, SPELL_TARGETS_NOT_HOSTILE);
+                if (!tempTargetUnitMap.empty())
+                    for (UnitList::const_iterator iter = tempTargetUnitMap.begin(); iter != tempTargetUnitMap.end(); ++iter)
+                        if ((*iter) && (*iter)->GetEntry() == 30643)
+                            targetUnitMap.push_back(*iter);
+                break;
+            }
+            // Berserk - Sartharion encounter
+            // target dragon bosses only
+            if (m_spellInfo->Id == 61632)
+            {
+                std::list<Unit*> tempTargetUnitMap;
+                targetUnitMap.clear();
+                FillAreaTargets(tempTargetUnitMap, radius, PUSH_DEST_CENTER, SPELL_TARGETS_FRIENDLY);
+                if (!tempTargetUnitMap.empty())
+                    for (UnitList::const_iterator iter = tempTargetUnitMap.begin(); iter != tempTargetUnitMap.end(); ++iter)
+                        switch ((*iter)->GetEntry() )
+                            {
+                                case 28860: // Sartharion
+                                case 30452: // Tenebron
+                                case 30451: // Shadron
+                                case 30449: // Vesperon
+                                    targetUnitMap.push_back(*iter);
+                                default:
+                                    break;
+                            }
+                break;
+            }
+             // Decimate - Gluth encounter
+            // target everything in the room except the caster
+            if (m_spellInfo->Id == 28374)
+            {
+                targetUnitMap.clear();
+                FillAreaTargets(targetUnitMap, radius, PUSH_DEST_CENTER, SPELL_TARGETS_ALL);
+            }
+            // Activate Constructs (remove all except inactive constructs)
+            if (m_spellInfo->Id == 62488 && !targetUnitMap.empty() )
+            {
+                std::list<Unit*> tempTargetUnitMap;
+                targetUnitMap.clear();
+                FillAreaTargets(tempTargetUnitMap, radius, PUSH_DEST_CENTER, SPELL_TARGETS_NOT_HOSTILE);
+
+                for (std::list<Unit*>::iterator itr = tempTargetUnitMap.begin(),next; itr != tempTargetUnitMap.end(); itr++)
+                {
+                    if ((*itr) && (*itr)->GetEntry() == 33121 && (*itr)->HasAura(62468, EFFECT_INDEX_0))
+                        targetUnitMap.push_back(*itr);
+                }
+            }
+            // Heat (remove all except active iron constructs)
+            if (m_spellInfo->Id == 62343)
+            {
+                std::list<Unit*> tempTargetUnitMap;
+                targetUnitMap.clear();
+                FillAreaTargets(tempTargetUnitMap, radius, PUSH_DEST_CENTER, SPELL_TARGETS_ALL);
+
+                for (std::list<Unit*>::iterator itr = tempTargetUnitMap.begin(),next; itr != tempTargetUnitMap.end(); itr++)
+                {
+                    if ((*itr) && (*itr)->GetEntry() == 33121 &&
+                        !(*itr)->HasAura(62468) && !(*itr)->HasAura(62373) &&
+                        !(*itr)->HasAura(62382) && !(*itr)->HasAura(67114)
+                        )
+                        targetUnitMap.push_back(*itr);
+                }
+
+                return;
+            }
+            // Supercharge (Iron Council: Ulduar)
+            if (m_spellInfo->Id == 61920)
+            {
+                std::list<Unit*> tempTargetUnitMap;
+                targetUnitMap.clear();
+                FillAreaTargets(tempTargetUnitMap, radius, PUSH_DEST_CENTER, SPELL_TARGETS_NOT_HOSTILE);
+
+                for (std::list<Unit*>::iterator itr = tempTargetUnitMap.begin(),next; itr != tempTargetUnitMap.end(); itr++)
+                {
+                    if ((*itr) &&
+                        ((*itr)->GetEntry() == 32867 || // Steelbreaker
+                        (*itr)->GetEntry() == 32927 || // Runemaster Molgeim
+                        (*itr)->GetEntry() == 32857) // Stormcaller Brundir
+                        )
+                        targetUnitMap.push_back(*itr);
+                }
+
+                return;
+            }
+
             // exclude caster
             targetUnitMap.remove(m_caster);
             break;
