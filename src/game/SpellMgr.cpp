@@ -2362,6 +2362,11 @@ bool SpellMgr::IsNoStackSpellDueToSpell(uint32 spellId_1, uint32 spellId_2) cons
         case SPELLFAMILY_PRIEST:
             if (spellInfo_2->SpellFamilyName == SPELLFAMILY_PRIEST)
             {
+                // Power Word: Fortitude and Prayer of Fortitude
+                if ((spellInfo_1->SpellFamilyFlags & UI64LIT(0x0000000000000008)) && (spellInfo_1->SpellFamilyFlags2 & UI64LIT(0x0000000000000400)) &&
+                   (spellInfo_2->SpellFamilyFlags & UI64LIT(0x0000000000000008)) && (spellInfo_2->SpellFamilyFlags2 & UI64LIT(0x0000000000000400)))
+                   return true;
+
                 // Devouring Plague and Shadow Vulnerability
                 if (((spellInfo_1->SpellFamilyFlags & UI64LIT(0x2000000)) && (spellInfo_2->SpellFamilyFlags & UI64LIT(0x800000000))) ||
                     ((spellInfo_2->SpellFamilyFlags & UI64LIT(0x2000000)) && (spellInfo_1->SpellFamilyFlags & UI64LIT(0x800000000))))
