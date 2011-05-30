@@ -8640,8 +8640,6 @@ void Aura::PeriodicDummyTick()
 //              case 46549: break;
 //              // Summon Ice Spear Knockback Delayer
 //              case 46878: break;
-//              // Burninate Effect
-//              case 47214: break;
 //              // Fizzcrank Practice Parachute
 //              case 47228: break;
 //              // Send Mug Control Aura
