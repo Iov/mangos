@@ -190,6 +190,7 @@ bool VehicleKit::AddPassenger(Unit *passenger, int8 seatId)
         }
 
         passenger->RemoveSpellsCausingAura(SPELL_AURA_MOD_SHAPESHIFT);
+        passenger->RemoveSpellsCausingAura(SPELL_AURA_MOD_STEALTH);
     }
 
     if (seatInfo->m_flags & SEAT_FLAG_CAN_CONTROL)
