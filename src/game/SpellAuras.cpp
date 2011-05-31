@@ -725,6 +725,10 @@ void AreaAura::Update(uint32 diff)
                 // flag for seelction is need apply aura to current iteration target
                 bool apply = true;
 
+                // The Might of Mograine must not affect scourge soldiers, must affect only players and DK bosses
+                if (GetSpellProto()->Id == 53642 && ((*tIter)->GetEntry() == 29186 || (*tIter)->GetEntry() == 29190 || (*tIter)->GetEntry() == 29219 || (*tIter)->GetEntry() == 29206))
+                    apply = false;
+
                 // we need ignore present caster self applied are auras sometime
                 // in cases if this only auras applied for spell effect
                 Unit::SpellAuraHolderBounds spair = (*tIter)->GetSpellAuraHolderBounds(GetId());
@@ -1278,15 +1282,15 @@ void Aura::TriggerSpell()
                         triggerTarget->CastCustomSpell(triggerTarget, 29879, &bpDamage, NULL, NULL, true, NULL, this, casterGUID);
                         return;
                     }
-//                  // Detonate Mana (Kel'Thuzad in Naxxramas) 
-                    case 27819: 
-                    { 
-                        if (target->getPowerType() != POWER_MANA) 
-                            return; 
-                        int32 bpDamage = target->GetMaxPower(POWER_MANA); 
-                        target->CastCustomSpell(target, 27820, &bpDamage, 0, 0, true); 
-                        target->ModifyPower(POWER_MANA, -2000); 
-                        return; 
+//                  // Detonate Mana (Kel'Thuzad in Naxxramas)
+                    case 27819:
+                    {
+                        if (target->getPowerType() != POWER_MANA)
+                            return;
+                        int32 bpDamage = target->GetMaxPower(POWER_MANA);
+                        target->CastCustomSpell(target, 27820, &bpDamage, 0, 0, true);
+                        target->ModifyPower(POWER_MANA, -2000);
+                        return;
                     }
 //                    // Controller Timer
 //                    case 28095: break;
@@ -1336,10 +1340,10 @@ void Aura::TriggerSpell()
 //                    case 28114: break;
 //                    // Communique Timer, camp
 //                    case 28346: break;
-//                    // Icebolt (Sapphiron - Naxxramas) 
-                    case 28522:                      // should apply some kind of iceblock visual aura 
-                        if (!target->HasAura(45776)) // dunno if triggered spell id is correct 
-                            trigger_spell_id = 45776; 
+//                    // Icebolt (Sapphiron - Naxxramas)
+                    case 28522:                      // should apply some kind of iceblock visual aura
+                        if (!target->HasAura(45776)) // dunno if triggered spell id is correct
+                            trigger_spell_id = 45776;
                         break;
 //                    // Silithyst
 //                    case 29519: break;
@@ -1991,19 +1995,23 @@ void Aura::TriggerSpell()
             case 48094:                                      // Intense Cold
                 triggerTarget->CastSpell(triggerTarget, trigger_spell_id, true, NULL, this);
                 return;
-            // Static Charge (Lady Vashj in Serpentshrine Cavern) 
-            case 38280: 
-            // Static Overload normal (Ionar in Halls of Lightning) 
-            case 52658: 
-            // Static Overload heroic (Ionar in Halls of Lightning) 
-            case 59795: 
-            // Searing Light (normal&heroic) (XT-002 in Ulduar) 
-            case 63018: 
-            case 65121: 
-            // Gravity Bomb (normal&heroic) (XT-002 in Ulduar) 
-            case 63024: 
+            // Static Charge (Lady Vashj in Serpentshrine Cavern)
+            case 38280:
+            // Static Overload normal (Ionar in Halls of Lightning)
+            case 52658:
+            // Static Overload heroic (Ionar in Halls of Lightning)
+            case 59795:
+            // Searing Light (normal&heroic) (XT-002 in Ulduar)
+            case 63018:
+            case 65121:
+            // Gravity Bomb (normal&heroic) (XT-002 in Ulduar)
+            case 63024:
             case 64234:
             case 53563:                                     // Beacon of Light
+            case 63018:                                     // Searing Light (normal&heroic) (XT-002 in Ulduar)
+            case 65121:
+            case 63024:                                     // Gravity Bomb (normal&heroic)  (XT-002 in Ulduar)
+            case 64234:
                 // original caster must be target (beacon)
                 target->CastSpell(target, trigger_spell_id, true, NULL, this, target->GetObjectGuid());
                 return;
@@ -2234,7 +2242,7 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
                             Caster->CombatStop(true);
                         }
                         return;
-                    } 
+                    }
                     case 47977:                             // Magic Broom
                         Spell::SelectMountByAreaAndSkill(target, GetSpellProto(), 42680, 42683, 42667, 42668, 0);
                         return;
@@ -2283,12 +2291,12 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
                     case 54729:                             // Winged Steed of the Ebon Blade
                         Spell::SelectMountByAreaAndSkill(target, GetSpellProto(), 0, 0, 54726, 54727, 0);
                         return;
-                    case 61187:  
-                    case 61190: 
-                    { 
-                        target->RemoveAurasDueToSpell(57620); 
-                        target->RemoveAurasDueToSpell(57874); 
-                        return; 
+                    case 61187:
+                    case 61190:
+                    {
+                        target->RemoveAurasDueToSpell(57620);
+                        target->RemoveAurasDueToSpell(57874);
+                        return;
                     }
                     case 62061:                             // Festive Holiday Mount
                         if (target->HasAuraType(SPELL_AURA_MOUNTED))
@@ -2318,17 +2326,17 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
                         if (target->GetTypeId() == TYPEID_PLAYER)
                             ((Player*)target)->removeSpell(63680);
                         return;
-                    case 65921:                             // Anub'arak Spikes (TotC10) 
-                        // expected to tick with 0.5 sec period (tick part see in Aura::PeriodicTick) 
-                        m_isPeriodic = true; 
-                        m_modifier.periodictime = 500; 
-                        m_periodicTimer = m_modifier.periodictime; 
-                        return; 
-                    case 67574:                             // Anub'arak Aggro Spike (TotC10) 
-                        // expected to tick with 0.5 sec period (tick part see in Aura::PeriodicTick) 
-                        m_isPeriodic = true; 
-                        m_modifier.periodictime = 500; 
-                        m_periodicTimer = m_modifier.periodictime; 
+                    case 65921:                             // Anub'arak Spikes (TotC10)
+                        // expected to tick with 0.5 sec period (tick part see in Aura::PeriodicTick)
+                        m_isPeriodic = true;
+                        m_modifier.periodictime = 500;
+                        m_periodicTimer = m_modifier.periodictime;
+                        return;
+                    case 67574:                             // Anub'arak Aggro Spike (TotC10)
+                        // expected to tick with 0.5 sec period (tick part see in Aura::PeriodicTick)
+                        m_isPeriodic = true;
+                        m_modifier.periodictime = 500;
+                        m_periodicTimer = m_modifier.periodictime;
                         return;
                     case 68645:
                         // Rocket Pack
@@ -3588,7 +3596,7 @@ void Aura::HandleAuraModShapeshift(bool apply, bool Real)
                         else if (hairColour == 7) modelid = 29417;
                         else if (hairColour == 4) modelid = 29416;
                     }
-                } 
+                }
                 else if (Player::TeamForRace(target->getRace()) == HORDE)
                 {
                     uint8 skinColour = target->GetByteValue(PLAYER_BYTES, 0);
@@ -4241,7 +4249,7 @@ void Aura::HandleForceReaction(bool apply, bool Real)
                         bg->EventPlayerDroppedFlag(player);
                 break;
             default:
-                break; 
+                break;
         }
     }
 }
@@ -4881,7 +4889,7 @@ void Aura::HandleAuraModStun(bool apply, bool Real)
             Unit* pCaster = GetCaster();
             if(!pCaster)
                 return;
-            
+
             pCaster->InterruptSpell(CURRENT_CHANNELED_SPELL,false);
             return;
         }
@@ -5289,11 +5297,11 @@ void Aura::HandleAuraModIncreaseSpeed(bool apply, bool Real)
     // all applied/removed only at real aura add/remove
     if(!Real)
         return;
-        
+
     Unit *target = GetTarget();
 
     GetTarget()->UpdateSpeed(MOVE_RUN, true);
-    
+
     if (apply && GetSpellProto()->Id == 58875)
         target->CastSpell(target, 58876, true);
 }
@@ -5669,9 +5677,9 @@ void Aura::HandlePeriodicTriggerSpell(bool apply, bool /*Real*/)
                     target->CastSpell(target, 32612, true, NULL, this);
 
                 return;
-            case 28522:                                     // Icebolt (Naxxramas: Sapphiron) 
-                if (target->HasAura(45776))                 // Should trigger/remove some kind of iceblock 
-                    target->RemoveAurasDueToSpell(45776);   // not sure about ice block spell id 
+            case 28522:                                     // Icebolt (Naxxramas: Sapphiron)
+                if (target->HasAura(45776))                 // Should trigger/remove some kind of iceblock
+                    target->RemoveAurasDueToSpell(45776);   // not sure about ice block spell id
                 return;
             case 42783:                                     // Wrath of the Astrom...
                 if (m_removeMode == AURA_REMOVE_BY_EXPIRE && GetEffIndex() + 1 < MAX_EFFECT_INDEX)
@@ -5696,43 +5704,43 @@ void Aura::HandlePeriodicTriggerSpell(bool apply, bool /*Real*/)
                 }
 
                 return;
-            case 65920:                                     //Anub'arak remove spike trigger 
-               if (m_removeMode == AURA_REMOVE_BY_EXPIRE) 
-               { 
-                   Unit* pCaster = GetCaster(); 
-                   if (pCaster && pCaster->GetTypeId() != TYPEID_PLAYER) 
-                   { 
-                       Unit* pVictim = pCaster->getVictim(); 
-                       if (pVictim && pVictim->HasAura(67574)) 
-                           pVictim->RemoveAurasDueToSpell(67574); 
-                       pCaster->CastSpell(pCaster, 65922, true); 
-                   } 
-               } 
-               return; 
-            case 65922: 
-                if (m_removeMode == AURA_REMOVE_BY_EXPIRE) 
-                { 
-                    Unit* pCaster = GetCaster(); 
-                    if (pCaster && pCaster->GetTypeId() != TYPEID_PLAYER) 
-                    { 
-                        Unit* pVictim = pCaster->getVictim(); 
-                        if (pVictim && pVictim->HasAura(67574)) 
-                            pVictim->RemoveAurasDueToSpell(67574); 
-                        pCaster->CastSpell(pCaster, 65923, true); 
-                    } 
-                } 
-                return; 
-            case 65923: 
-                if (m_removeMode == AURA_REMOVE_BY_EXPIRE) 
-                { 
-                    Unit* pCaster = GetCaster(); 
-                    if (pCaster && pCaster->GetTypeId() != TYPEID_PLAYER) 
-                    { 
-                        Unit* pVictim = pCaster->getVictim(); 
-                        if (pVictim && pVictim->HasAura(67574)) 
-                            pVictim->RemoveAurasDueToSpell(67574); 
-                    } 
-                } 
+            case 65920:                                     //Anub'arak remove spike trigger
+               if (m_removeMode == AURA_REMOVE_BY_EXPIRE)
+               {
+                   Unit* pCaster = GetCaster();
+                   if (pCaster && pCaster->GetTypeId() != TYPEID_PLAYER)
+                   {
+                       Unit* pVictim = pCaster->getVictim();
+                       if (pVictim && pVictim->HasAura(67574))
+                           pVictim->RemoveAurasDueToSpell(67574);
+                       pCaster->CastSpell(pCaster, 65922, true);
+                   }
+               }
+               return;
+            case 65922:
+                if (m_removeMode == AURA_REMOVE_BY_EXPIRE)
+                {
+                    Unit* pCaster = GetCaster();
+                    if (pCaster && pCaster->GetTypeId() != TYPEID_PLAYER)
+                    {
+                        Unit* pVictim = pCaster->getVictim();
+                        if (pVictim && pVictim->HasAura(67574))
+                            pVictim->RemoveAurasDueToSpell(67574);
+                        pCaster->CastSpell(pCaster, 65923, true);
+                    }
+                }
+                return;
+            case 65923:
+                if (m_removeMode == AURA_REMOVE_BY_EXPIRE)
+                {
+                    Unit* pCaster = GetCaster();
+                    if (pCaster && pCaster->GetTypeId() != TYPEID_PLAYER)
+                    {
+                        Unit* pVictim = pCaster->getVictim();
+                        if (pVictim && pVictim->HasAura(67574))
+                            pVictim->RemoveAurasDueToSpell(67574);
+                    }
+                }
                 return;
             case 63018: // Searing Light (Ulduar: XT-002)
             case 65121: // Searing Light (h) (Ulduar: XT-002)
@@ -5938,21 +5946,21 @@ void Aura::HandleAuraPeriodicDummy(bool apply, bool Real)
                 m_modifier.m_amount += int32(caster->GetTotalAttackPowerValue(RANGED_ATTACK) * 14 / 100);
             break;
         }
-        case SPELLFAMILY_DEATHKNIGHT: 
-        { 
-            Unit* pCaster = GetCaster(); 
+        case SPELLFAMILY_DEATHKNIGHT:
+        {
+            Unit* pCaster = GetCaster();
 
-            if (apply) 
-            { 
-                // Summon Gargoyle 
-                if (GetId() == 49206) 
-                { 
-                    if (pCaster) 
-                         if (Pet *pGargoyle = pCaster->FindGuardianWithEntry(GetSpellProto()->EffectMiscValue[EFFECT_INDEX_0]) ) 
-                            if (pGargoyle->getVictim() != target) 
-                                pGargoyle->AI()->AttackStart(target); 
-                } 
-            } 
+            if (apply)
+            {
+                // Summon Gargoyle
+                if (GetId() == 49206)
+                {
+                    if (pCaster)
+                         if (Pet *pGargoyle = pCaster->FindGuardianWithEntry(GetSpellProto()->EffectMiscValue[EFFECT_INDEX_0]) )
+                            if (pGargoyle->getVictim() != target)
+                                pGargoyle->AI()->AttackStart(target);
+                }
+            }
         }
     }
 
@@ -6129,12 +6137,12 @@ void Aura::HandlePeriodicDamage(bool apply, bool Real)
     // remove time effects
     else
     {
-        // Deathbloom (Naxxramas - Loatheb normal) 
-        if (spellProto->Id == 29865) 
-            target->CastSpell(target, 55594, true); 
+        // Deathbloom (Naxxramas - Loatheb normal)
+        if (spellProto->Id == 29865)
+            target->CastSpell(target, 55594, true);
 
-        // Deathbloom (Naxxramas - Loatheb heroic) 
-        if (spellProto->Id == 55053) 
+        // Deathbloom (Naxxramas - Loatheb heroic)
+        if (spellProto->Id == 55053)
             target->CastSpell(target, 55601, true);
 
         // Parasitic Shadowfiend - handle summoning of two Shadowfiends on DoT expire
@@ -7251,10 +7259,10 @@ void Aura::HandleShapeshiftBoosts(bool apply)
             spellId1 = 49868;
             spellId2 = 71167;
 
-            if (target->GetTypeId() == TYPEID_PLAYER)      // Spell 49868 and 71167 have same category as main form spell and share cooldown 
-            {  
-              ((Player*)target)->RemoveSpellCooldown(49868); 
-              ((Player*)target)->RemoveSpellCooldown(71167); 
+            if (target->GetTypeId() == TYPEID_PLAYER)      // Spell 49868 and 71167 have same category as main form spell and share cooldown
+            {
+              ((Player*)target)->RemoveSpellCooldown(49868);
+              ((Player*)target)->RemoveSpellCooldown(71167);
             }
             break;
         case FORM_GHOSTWOLF:
@@ -7773,7 +7781,7 @@ void Aura::HandleSchoolAbsorb(bool apply, bool Real)
                 }
             }
         }
-        else if (caster && caster->GetTypeId() == TYPEID_PLAYER && spellProto->Id == 47788 && 
+        else if (caster && caster->GetTypeId() == TYPEID_PLAYER && spellProto->Id == 47788 &&
             m_removeMode == AURA_REMOVE_BY_EXPIRE)
         {
             Player* plr = (Player*)caster;
@@ -7793,11 +7801,11 @@ void Aura::HandleSchoolAbsorb(bool apply, bool Real)
                 plr->SendDirectMessage(&data);
             }
         }
-        // Shield of Runes (normal) (Runemaster Molgeim, Assembly of Iron encounter in Ulduar) 
-        else if (target && spellProto->Id == 62274 && m_removeMode == AURA_REMOVE_BY_SHIELD_BREAK) 
-        { 
-            target->CastSpell(target, 62277, true); 
-        } 
+        // Shield of Runes (normal) (Runemaster Molgeim, Assembly of Iron encounter in Ulduar)
+        else if (target && spellProto->Id == 62274 && m_removeMode == AURA_REMOVE_BY_SHIELD_BREAK)
+        {
+            target->CastSpell(target, 62277, true);
+        }
         // Shield of Runes (Runemaster Molgeim: Ulduar)
         else if ((GetId() == 62274 || GetId() == 63489) && m_removeMode == AURA_REMOVE_BY_SHIELD_BREAK)
         {
@@ -7825,7 +7833,7 @@ void Aura::PeriodicTick()
             if(!pCaster)
                 return;
 
-            if(!pCaster->IsInWorld() || !pCaster->isAlive()) 
+            if(!pCaster->IsInWorld() || !pCaster->isAlive())
                 return;
 
             if( spellProto->Effect[GetEffIndex()] == SPELL_EFFECT_PERSISTENT_AREA_AURA &&
@@ -7970,7 +7978,7 @@ void Aura::PeriodicTick()
             if (pCaster->GetTypeId() == TYPEID_PLAYER)
                 pdamage -= target->GetSpellDamageReduction(pdamage);
 
-            if (GetSpellProto()->Id == 50344) // Dream Funnel 
+            if (GetSpellProto()->Id == 50344) // Dream Funnel
                 pdamage = uint32(pCaster->GetMaxHealth()*0.05f);
 
             target->CalculateDamageAbsorbAndResist(pCaster, GetSpellSchoolMask(spellProto), DOT, pdamage, &absorb, &resist, !(GetSpellProto()->AttributesEx & SPELL_ATTR_EX_CANT_REFLECTED));
@@ -8686,15 +8694,15 @@ void Aura::PeriodicDummyTick()
                     {
                         if (target->HasAura(54683, EFFECT_INDEX_0))
                             return;
-                        else 
+                        else
                         {
                             // Credit Scourge
                             caster->CastSpell(caster, 47208, true);
                             // set ablaze
                             target->CastSpell(target, 54683, true);
-                            ((Creature*)target)->ForcedDespawn(4000);   
+                            ((Creature*)target)->ForcedDespawn(4000);
                         }
-                    }                    
+                    }
                     break;
                 }
                 case 50789:                                 // Summon iron dwarf (left or right)
@@ -8776,40 +8784,40 @@ void Aura::PeriodicDummyTick()
 
                     break;
                 }
-                case 62038: // Biting Cold (Ulduar: Hodir) 
-                { 
-                    if (target->GetTypeId() != TYPEID_PLAYER) 
+                case 62038: // Biting Cold (Ulduar: Hodir)
+                {
+                    if (target->GetTypeId() != TYPEID_PLAYER)
                         return;
 
-                    Unit * caster = GetCaster(); 
-                   if (!caster) 
+                    Unit * caster = GetCaster();
+                   if (!caster)
                        return;
 
-                    // aura stack increase every 3 (data in m_miscvalue) seconds and decrease every 1s 
-                    // Reset reapply counter at move and decrease stack amount by 1 
-                    if (((Player*)target)->isMoving()) 
-                    { 
-                        if (SpellAuraHolder *holder = target->GetSpellAuraHolder(62039)) 
-                        {  
-                            if (holder->ModStackAmount(-1)) 
-                                target->RemoveSpellAuraHolder(holder); 
-                        } 
-                        m_modifier.m_miscvalue = 3; 
-                        return; 
-                    } 
+                    // aura stack increase every 3 (data in m_miscvalue) seconds and decrease every 1s
+                    // Reset reapply counter at move and decrease stack amount by 1
+                    if (((Player*)target)->isMoving())
+                    {
+                        if (SpellAuraHolder *holder = target->GetSpellAuraHolder(62039))
+                        {
+                            if (holder->ModStackAmount(-1))
+                                target->RemoveSpellAuraHolder(holder);
+                        }
+                        m_modifier.m_miscvalue = 3;
+                        return;
+                    }
 
-                    // We are standing at the moment, countdown 
-                    if (m_modifier.m_miscvalue > 0) 
-                    { 
-                        --m_modifier.m_miscvalue; 
-                        return; 
-                    } 
-                    target->CastSpell(target, 62039, true); 
-                    target->CastSpell(target, 62188, true, 0, 0, caster->GetObjectGuid()); 
+                    // We are standing at the moment, countdown
+                    if (m_modifier.m_miscvalue > 0)
+                    {
+                        --m_modifier.m_miscvalue;
+                        return;
+                    }
+                    target->CastSpell(target, 62039, true);
+                    target->CastSpell(target, 62188, true, 0, 0, caster->GetObjectGuid());
 
-                    // recast every ~3 seconds 
-                    m_modifier.m_miscvalue = 3; 
-                    return; 
+                    // recast every ~3 seconds
+                    m_modifier.m_miscvalue = 3;
+                    return;
                 }
                 case 62717:                                 // Slag Pot (periodic dmg)
                 case 63477:
@@ -8851,44 +8859,44 @@ void Aura::PeriodicDummyTick()
                     }
                     return;
                 }
-                case 65921:                                // Trial Of Crusader (Spike Aura - Anub'arak) 
-                { 
-                    uint32 Tick = GetAuraTicks(); 
-                    if (Tick == 1) 
-                    { 
-                        target->CastSpell(target, 66339, true);  //anub Summon Scarab Aura 
-                        target->CastSpell(target, 65981, false); //Submerged 
-                    } 
+                case 65921:                                // Trial Of Crusader (Spike Aura - Anub'arak)
+                {
+                    uint32 Tick = GetAuraTicks();
+                    if (Tick == 1)
+                    {
+                        target->CastSpell(target, 66339, true);  //anub Summon Scarab Aura
+                        target->CastSpell(target, 65981, false); //Submerged
+                    }
                     if (Tick == 6)
                         target->CastSpell(target, 66169, true); //Summon Spike
-                    if (Tick % 130 == 0) 
-                    { 
-                        target->RemoveAurasDueToSpell(65981); 
-                        target->RemoveAurasDueToSpell(65921); 
-                        target->RemoveAurasDueToSpell(66339); 
-                        target->CastSpell(target, 65982, true); // Birth 
-                    } 
-                    else 
-                    { 
-                        if (Tick > 5) 
-                        { 
-                            target->CastSpell(target, 67470, true); //Check Aura Spell 
-                            target->CastSpell(target, 66170, true); //Anub Teleport 
-                        } 
-                    } 
-                    return; 
-                } 
-                case 67574:                                // Trial Of Crusader (Spike Aggro Aura - Anub'arak) 
-                { 
-                    if (!target->GetMap()->Instanceable()) 
-                        return; 
+                    if (Tick % 130 == 0)
+                    {
+                        target->RemoveAurasDueToSpell(65981);
+                        target->RemoveAurasDueToSpell(65921);
+                        target->RemoveAurasDueToSpell(66339);
+                        target->CastSpell(target, 65982, true); // Birth
+                    }
+                    else
+                    {
+                        if (Tick > 5)
+                        {
+                            target->CastSpell(target, 67470, true); //Check Aura Spell
+                            target->CastSpell(target, 66170, true); //Anub Teleport
+                        }
+                    }
+                    return;
+                }
+                case 67574:                                // Trial Of Crusader (Spike Aggro Aura - Anub'arak)
+                {
+                    if (!target->GetMap()->Instanceable())
+                        return;
 
-                    if (InstanceData* data = target->GetInstanceData()) 
-                    { 
-                        if (Creature* pSpike = target->GetMap()->GetCreature(data->GetData64(34660))) 
-                            pSpike->AI()->AttackStart(target); 
-                    } 
-                     return; 
+                    if (InstanceData* data = target->GetInstanceData())
+                    {
+                        if (Creature* pSpike = target->GetMap()->GetCreature(data->GetData64(34660)))
+                            pSpike->AI()->AttackStart(target);
+                    }
+                     return;
                 }
                 case 67630:                                 // Leeching Swarm 25 man
                 case 68647:
@@ -10182,7 +10190,7 @@ void SpellAuraHolder::HandleSpellSpecificBoosts(bool apply)
                     break;
                 }
                 case 63277:                                 // Shadow Crash (General Vezax - Ulduar)
-                {   
+                {
                     spellId1 = 65269;
                     break;
                 }
@@ -10193,27 +10201,27 @@ void SpellAuraHolder::HandleSpellSpecificBoosts(bool apply)
                 {
                     spellId1 = 70871;
                 }
-                case 29865:                                 // Deathbloom (10 man) 
-                { 
-                    if (!apply && m_removeMode == AURA_REMOVE_BY_EXPIRE) 
-                    { 
-                        cast_at_remove = true; 
-                        spellId1 = 55594; 
-                    } 
-                    else 
-                        return; 
-                    break; 
-                } 
-                case 55053:                                 // Deathbloom (25 man) 
-                { 
-                    if (!apply && m_removeMode == AURA_REMOVE_BY_EXPIRE) 
-                    { 
-                        cast_at_remove = true; 
-                        spellId1 = 55601; 
-                    } 
-                    else 
-                        return; 
-                    break; 
+                case 29865:                                 // Deathbloom (10 man)
+                {
+                    if (!apply && m_removeMode == AURA_REMOVE_BY_EXPIRE)
+                    {
+                        cast_at_remove = true;
+                        spellId1 = 55594;
+                    }
+                    else
+                        return;
+                    break;
+                }
+                case 55053:                                 // Deathbloom (25 man)
+                {
+                    if (!apply && m_removeMode == AURA_REMOVE_BY_EXPIRE)
+                    {
+                        cast_at_remove = true;
+                        spellId1 = 55601;
+                    }
+                    else
+                        return;
+                    break;
                 }
                 case 71905:                                 // Soul Fragment
                 {
@@ -11224,7 +11232,7 @@ bool Aura::IsEffectStacking()
         case SPELL_AURA_MOD_ATTACK_POWER:                               // (Greater) Blessing of Might / Battle Shout
         case SPELL_AURA_MOD_RANGED_ATTACK_POWER:
         case SPELL_AURA_MOD_POWER_REGEN:                                // (Greater) Blessing of Wisdom
-        case SPELL_AURA_MOD_DAMAGE_PERCENT_TAKEN:                       // Glyph of Salvation / Pain Suppression / Safeguard ? 
+        case SPELL_AURA_MOD_DAMAGE_PERCENT_TAKEN:                       // Glyph of Salvation / Pain Suppression / Safeguard ?
             if (GetSpellProto()->AttributesEx6 & SPELL_ATTR_EX6_UNK26)
                 return false;
             // (Improved) Icy Talons check

@@ -923,9 +923,17 @@ void WorldSession::SendLfgPlayerReward(LFGDungeonEntry const* dungeon, const LFG
     data << uint8(done);
     data << uint32(1);
     data << uint32(qRew->GetRewOrReqMoney());
-    data << uint32(qRew->XPValue(GetPlayer()));
+    // do not give XP to players which have maxlevel
+    if (GetPlayer()->getLevel() < sWorld.getConfig(CONFIG_UINT32_MAX_PLAYER_LEVEL))
+        data << uint32(qRew->XPValue(GetPlayer()));
+    else
+        data << uint32(0);
     data << uint32(reward->reward[done].variableMoney);
-    data << uint32(reward->reward[done].variableXP);
+    // do not give XP to players which have maxlevel
+    if (GetPlayer()->getLevel() < sWorld.getConfig(CONFIG_UINT32_MAX_PLAYER_LEVEL))
+        data << uint32(reward->reward[done].variableXP);
+    else
+        data << uint32(0);
     data << uint8(itemNum);
     if (itemNum)
     {

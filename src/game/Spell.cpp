@@ -599,7 +599,8 @@ bool Spell::FillCustomTargetMap(SpellEffectIndex i, UnitList &targetUnitMap)
             }
             break;
         }
-        case 68921: case 69049: // Soulstorm (Forge of Souls - Bronjahm)
+        case 68921: // Soulstorm (Forge of Souls - Bronjahm)
+		case 69049:
         {
             FillAreaTargets(targetUnitMap, radius, PUSH_DEST_CENTER, SPELL_TARGETS_AOE_DAMAGE);
             UnitList tmpUnitMap;
@@ -619,10 +620,11 @@ bool Spell::FillCustomTargetMap(SpellEffectIndex i, UnitList &targetUnitMap)
             }
             break;
         }
-        case 66862: case 67681: // Radiance (Trial of the Champion - Eadric the Pure)
+        case 66862: // Radiance (Trial of the Champion - Eadric the Pure)
+        case 67681:
         {
             UnitList tmpUnitMap;
-            FillAreaTargets(tmpUnitMap, radius, PUSH_DEST_CENTER,SPELL_TARGETS_AOE_DAMAGE);
+            FillAreaTargets(tmpUnitMap, radius, PUSH_DEST_CENTER, SPELL_TARGETS_AOE_DAMAGE);
             if (!tmpUnitMap.empty())
             {
                 for (UnitList::const_iterator itr = tmpUnitMap.begin(); itr != tmpUnitMap.end(); ++itr)
@@ -884,7 +886,7 @@ void Spell::FillTargetMap()
                     case TARGET_EFFECT_SELECT:
                         SetTargetMap(SpellEffectIndex(i), m_spellInfo->EffectImplicitTargetA[i], tmpUnitMap);
                         break;
-                    case TARGET_RANDOM_NEARBY_DEST: 
+                    case TARGET_RANDOM_NEARBY_DEST:
                         SetTargetMap(SpellEffectIndex(i), m_spellInfo->EffectImplicitTargetA[i], tmpUnitMap);
                     break;
                     // most A/B target pairs is self->negative and not expect adding caster to target list
@@ -1314,7 +1316,7 @@ void Spell::DoAllEffectOnTarget(TargetInfo *target)
     }
 
     // recheck for visibility of target
-    if ((m_spellInfo->speed > 0.0f || 
+    if ((m_spellInfo->speed > 0.0f ||
         (m_spellInfo->EffectImplicitTargetA[0] == TARGET_CHAIN_DAMAGE && GetSpellCastTime(m_spellInfo, this) > 0)) &&
         (!unit->isVisibleForOrDetect(m_caster, m_caster, false) && !m_IsTriggeredSpell))
     {
@@ -1558,7 +1560,7 @@ void Spell::DoSpellHitOnUnit(Unit *unit, uint32 effectMask)
                 if (!unit->IsStandState() && !unit->hasUnitState(UNIT_STAT_STUNNED))
                     unit->SetStandState(UNIT_STAND_STATE_STAND);
 
-                if (!(m_spellInfo->AttributesEx & SPELL_ATTR_EX_NO_THREAT) && 
+                if (!(m_spellInfo->AttributesEx & SPELL_ATTR_EX_NO_THREAT) &&
                     !unit->isInCombat() && unit->GetTypeId() != TYPEID_PLAYER && ((Creature*)unit)->AI())
                     unit->AttackedBy(realCaster);
 
@@ -1956,6 +1958,8 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
                 case 64218:                                 // Overcharge
                 case 66336:                                 // Mistress' Kiss (Trial of the Crusader, ->
                 case 67077:                                 // -> Lord Jaraxxus encounter, 10 and 10 heroic)
+                case 66152:                                 // Bullet Foced Cast (Trial of the Crusader, ->
+                case 66153:                                 // -> Twin Valkyr encounter, 10 and 25 mode)
                 case 66001:                                 // Touch of Darkness
                 case 67281:
                 case 67282:
@@ -2140,7 +2144,7 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
             float angle = 2.0f * M_PI_F * rand_norm_f();
             float dest_x, dest_y, dest_z;
             m_caster->GetClosePoint(dest_x, dest_y, dest_z, 0.0f, radius, angle);
-            if (m_spellInfo->Id == 66084)                   // cosmetic hack for Lightning Arrows  
+            if (m_spellInfo->Id == 66084)                   // cosmetic hack for Lightning Arrows
                 dest_z += 10.0f;                             // (Trial of the Champion encounter)
             m_targets.setDestination(dest_x, dest_y, dest_z);
 
@@ -2166,7 +2170,7 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
                     targetUnitMap.push_back(m_caster);
             // This targetMode is often used as 'last' implicitTarget for positive spells, that just require coordinates
             // and no unitTarget (e.g. summon effects). As MaNGOS always needs a unitTarget we add just the caster here.
-            
+
             // Prevent multiple summons
             if (m_spellInfo->Effect[effIndex] == SPELL_EFFECT_SUMMON || m_spellInfo->Effect[effIndex] == SPELL_EFFECT_SUMMON_OBJECT_WILD)
                 unMaxTargets = 1;
@@ -2388,13 +2392,13 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
                 break;
             else
                 FillAreaTargets(targetUnitMap, radius, PUSH_DEST_CENTER, SPELL_TARGETS_AOE_DAMAGE);
-            
-			if (m_spellInfo->Id == 62240 || m_spellInfo->Id == 62920) 
-            { 
-                if (SpellAuraHolder *holder = m_caster->GetSpellAuraHolder(62239)) 
-                    unMaxTargets = holder->GetStackAmount(); 
-                else 
-                    unMaxTargets = 1; 
+
+			if (m_spellInfo->Id == 62240 || m_spellInfo->Id == 62920)
+            {
+                if (SpellAuraHolder *holder = m_caster->GetSpellAuraHolder(62239))
+                    unMaxTargets = holder->GetStackAmount();
+                else
+                    unMaxTargets = 1;
             }
 			//break;    might need a break  here  gonna have to do some testing
 
@@ -2457,7 +2461,7 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
             {
                 if (SpellAuraHolder *holder = m_caster->GetSpellAuraHolder(62239))
                     unMaxTargets = holder->GetStackAmount();
-                else 
+                else
                     unMaxTargets = 1;
             }
 
@@ -2797,13 +2801,13 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
                     FillAreaTargets(targetUnitMap, radius, PUSH_DEST_CENTER, SPELL_TARGETS_AOE_DAMAGE);
                     break;
             }
-            if (m_spellInfo->Id == 63278)           // Mark of the Faceless (find a better place) 
-            { 
-                Unit* currentTarget = m_targets.getUnitTarget(); 
-                if(currentTarget) 
-                { 
-                    targetUnitMap.remove(currentTarget);                 
-                } 
+            if (m_spellInfo->Id == 63278)           // Mark of the Faceless (find a better place)
+            {
+                Unit* currentTarget = m_targets.getUnitTarget();
+                if(currentTarget)
+                {
+                    targetUnitMap.remove(currentTarget);
+                }
             }
             break;
         }
@@ -2950,12 +2954,12 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
                     FillAreaTargets(targetUnitMap, radius, PUSH_SELF_CENTER, SPELL_TARGETS_HOSTILE);
                     break;
                 case 71390:                                 // Pact of the Darkfallen
-                    if (FillCustomTargetMap(effIndex, targetUnitMap)) 
+                    if (FillCustomTargetMap(effIndex, targetUnitMap))
                         break;
                     break;
                 case 71341:                                 // Pact of the Darkfallen
                     if (effIndex == EFFECT_INDEX_1)
-                        if (FillCustomTargetMap(effIndex, targetUnitMap)) 
+                        if (FillCustomTargetMap(effIndex, targetUnitMap))
                           break;
                     break;
                 case 71447:                                 // Bloodbolt Splash 10N
@@ -3066,10 +3070,10 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
             else
                 FillAreaTargets(targetUnitMap, radius, PUSH_DEST_CENTER, SPELL_TARGETS_FRIENDLY);
             break;
-            // Mana Detonation (Kel'Thuzad in Naxxramas) - should not damage caster 
-            if (m_spellInfo->Id == 27820) 
-            { 
-               targetUnitMap.remove(m_caster); 
+            // Mana Detonation (Kel'Thuzad in Naxxramas) - should not damage caster
+            if (m_spellInfo->Id == 27820)
+            {
+               targetUnitMap.remove(m_caster);
             }
         // TARGET_SINGLE_PARTY means that the spells can only be casted on a party member and not on the caster (some seals, fire shield from imp, etc..)
         case TARGET_SINGLE_PARTY:
@@ -3679,16 +3683,16 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
             }
             break;
         }
-        case TARGET_UNK_92: 
-        { 
-            if (Unit *unitTarget = m_targets.getUnitTarget()) 
-                targetUnitMap.push_back(unitTarget); 
-            else 
-            { 
-                if (Unit *creator = m_caster->GetMap()->GetUnit(m_caster->GetCreatorGuid())) 
-                    targetUnitMap.push_back(creator); 
-            } 
-            break; 
+        case TARGET_UNK_92:
+        {
+            if (Unit *unitTarget = m_targets.getUnitTarget())
+                targetUnitMap.push_back(unitTarget);
+            else
+            {
+                if (Unit *creator = m_caster->GetMap()->GetUnit(m_caster->GetCreatorGuid()))
+                    targetUnitMap.push_back(creator);
+            }
+            break;
         }
         default:
             //sLog.outError( "SPELL: Unknown implicit target (%u) for spell ID %u", targetMode, m_spellInfo->Id );
@@ -3884,7 +3888,7 @@ void Spell::cast(bool skipCheck)
 
     if (!spellInfo)
         return;
-		
+
     SetExecutedCurrently(true);
 
     if (!m_caster->CheckAndIncreaseCastCounter())
@@ -4215,7 +4219,7 @@ void Spell::handle_immediate()
         return;
 
     SpellEntry const* spellInfo = sSpellStore.LookupEntry(m_spellInfo->Id);
-	
+
     if (!spellInfo)
         return;
 
@@ -5555,7 +5559,7 @@ void Spell::CastPreCastSpells(Unit* target)
 
 SpellCastResult Spell::CheckCast(bool strict)
 {
-    // Ebonweave 
+    // Ebonweave
     if(m_spellInfo->Id==56002 && m_caster->GetAreaId()==4167) return SPELL_CAST_OK;
 
     // check cooldowns to prevent cheating (ignore passive spells, that client side visual only)
@@ -5909,7 +5913,7 @@ SpellCastResult Spell::CheckCast(bool strict)
 
 
     // not let players cast spells at mount (and let do it to creatures)
-    if ((m_caster->IsMounted() || (m_caster->GetVehicle() && !castOnVehicleAllowed)) && m_caster->GetTypeId() == TYPEID_PLAYER && !m_IsTriggeredSpell && 
+    if ((m_caster->IsMounted() || (m_caster->GetVehicle() && !castOnVehicleAllowed)) && m_caster->GetTypeId() == TYPEID_PLAYER && !m_IsTriggeredSpell &&
         !IsPassiveSpell(m_spellInfo) && !(m_spellInfo->Attributes & SPELL_ATTR_CASTABLE_WHILE_MOUNTED))
     {
         if (m_caster->IsTaxiFlying())
@@ -6587,8 +6591,8 @@ SpellCastResult Spell::CheckCast(bool strict)
             case SPELL_EFFECT_LEAP_BACK:
             {
                 if(m_spellInfo->Id == 781)
-                    if(!m_caster->isInCombat()) 
-                        return SPELL_FAILED_CANT_DO_THAT_RIGHT_NOW; 
+                    if(!m_caster->isInCombat())
+                        return SPELL_FAILED_CANT_DO_THAT_RIGHT_NOW;
                 break;
             }
             case SPELL_EFFECT_TALENT_SPEC_SELECT:
@@ -6703,9 +6707,6 @@ SpellCastResult Spell::CheckCast(bool strict)
             {
                 if (m_caster->IsInWater())
                     return SPELL_FAILED_ONLY_ABOVEWATER;
-
-                if (m_caster->GetTypeId() == TYPEID_PLAYER && ((Player*)m_caster)->GetTransport())
-                    return SPELL_FAILED_NO_MOUNTS_ALLOWED;
 
                 // Ignore map check if spell have AreaId. AreaId already checked and this prevent special mount spells
                 if (m_caster->GetTypeId() == TYPEID_PLAYER && !sMapStore.LookupEntry(m_caster->GetMapId())->IsMountAllowed() && !m_IsTriggeredSpell && !m_spellInfo->AreaGroupId)

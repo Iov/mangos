@@ -4156,10 +4156,10 @@ bool ChatHandler::HandleNpcInfoCommand(char* /*args*/)
     PSendSysMessage(LANG_NPCINFO_LOOT,  cInfo->lootid,cInfo->pickpocketLootId,cInfo->SkinLootId);
     PSendSysMessage(LANG_NPCINFO_DUNGEON_ID, target->GetInstanceId());
 
-    if (target->SD2AIName()) 
+    if (target->SD2AIName())
     PSendSysMessage("ScriptName: %s", target->GetScriptName().c_str());
 
-    if (target->HasAIName()) 
+    if (target->HasAIName())
     PSendSysMessage("Event_AI: %s", target->GetAIName().c_str());
 
     PSendSysMessage(LANG_NPCINFO_POSITION,float(target->GetPositionX()), float(target->GetPositionY()), float(target->GetPositionZ()));

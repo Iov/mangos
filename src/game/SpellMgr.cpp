@@ -717,7 +717,7 @@ bool IsPositiveEffect(SpellEntry const *spellproto, SpellEffectIndex effIndex)
             {
                 case 28441:                                 // AB Effect 000
                     return false;
-                case 48021:                                 // support for quest 12173 
+                case 48021:                                 // support for quest 12173
                     return true;
                 case 49634:                                 // Sergeant's Flare
                 case 54530:                                 // Opening
@@ -739,15 +739,15 @@ bool IsPositiveEffect(SpellEntry const *spellproto, SpellEffectIndex effIndex)
         case SPELL_EFFECT_THREAT:
             return false;
 
-        case SPELL_EFFECT_PERSISTENT_AREA_AURA: 
-           switch(spellproto->Id) 
-           { 
-               case 62821:                                 // Toasty Fire (Ulduar Hodir); unclear why this spell has SPELL_ATTR_EX_NEGATIVE 
-                   return true; 
-                   break; 
-               default: 
-                   break; 
-           } 
+        case SPELL_EFFECT_PERSISTENT_AREA_AURA:
+           switch(spellproto->Id)
+           {
+               case 62821:                                 // Toasty Fire (Ulduar Hodir); unclear why this spell has SPELL_ATTR_EX_NEGATIVE
+                   return true;
+                   break;
+               default:
+                   break;
+           }
            break;
 
         // non-positive aura use
@@ -2454,6 +2454,11 @@ bool SpellMgr::IsNoStackSpellDueToSpell(uint32 spellId_1, uint32 spellId_2) cons
                 if((spellInfo_1->SpellIconID == 225 && spellInfo_2->SpellIconID == 2246) ||
                    (spellInfo_2->SpellIconID == 225 && spellInfo_1->SpellIconID == 2246))
                    return false;
+
+               // Rejuvenation and Forethought Talisman
+                if ((spellInfo_1->SpellIconID == 64 && spellInfo_2->SpellIconID == 3088) ||
+                    (spellInfo_2->SpellIconID == 64 && spellInfo_1->SpellIconID == 3088))
+                    return false;
             }
 
             // Flurry and Rip stacking
@@ -4840,14 +4845,14 @@ bool SpellArea::IsFitToRequirements(Player const* player, uint32 newZone, uint32
         {
             if (player->GetBattleGroundTypeId() != BATTLEGROUND_IC || !player->GetBattleGround())
                 return false;
- 
+
             uint8 nodeType = spellId == 68719 ? NODE_TYPE_REFINERY : NODE_TYPE_QUARRY;
             uint8 nodeState = player->GetTeamId() == TEAM_ALLIANCE ? NODE_STATE_CONTROLLED_A : NODE_STATE_CONTROLLED_H;
 
             BattleGroundIC* pIC = static_cast<BattleGroundIC*>(player->GetBattleGround());
             if (pIC->GetNodeState(nodeType) == nodeState)
                 return true;
- 
+
             return false;
         }
     }
@@ -4871,7 +4876,7 @@ SpellEntry const* GetSpellEntryByDifficulty(uint32 id, Difficulty difficulty)
     if (!spellDiff->spellId[difficulty])
         return NULL;
 
-    sLog.outDebug("Searching spell %u in SpellDifficulty.dbc: Result is: %u/%u/%u/%u ",id, 
+    sLog.outDebug("Searching spell %u in SpellDifficulty.dbc: Result is: %u/%u/%u/%u ",id,
     spellDiff->spellId[RAID_DIFFICULTY_10MAN_NORMAL],
     spellDiff->spellId[RAID_DIFFICULTY_25MAN_NORMAL],
     spellDiff->spellId[RAID_DIFFICULTY_10MAN_HEROIC],

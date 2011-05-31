@@ -4435,7 +4435,7 @@ bool Unit::AddSpellAuraHolder(SpellAuraHolder *holder)
     }
 
     // Strength of the Pack must affect only Sanctum Sentries and exclude caster too (Auriaya encounter, Ulduar)
-    if (holder->GetId() == 64381 && (this->GetEntry() != 34014 || this->GetObjectGuid() == holder->GetCasterGuid()))
+    if (holder->GetId() == 64381 && (GetEntry() != 34014 || GetObjectGuid() == holder->GetCasterGuid()))
     {
         delete holder;
         return false;
@@ -4510,6 +4510,10 @@ bool Unit::AddSpellAuraHolder(SpellAuraHolder *holder)
 
                 // m_auraname can be modified to SPELL_AURA_NONE for area auras, use original
                 AuraType aurNameReal = AuraType(aurSpellInfo->EffectApplyAuraName[i]);
+
+                // Strength of the Pack must stuck from different casters (Auriaya encounter, Ulduar)
+                if (foundHolder->GetId() == 64381)
+                    continue;
 
                 // Priest's Mind Flay must stack from different casters
                 if (const SpellEntry* sp = foundHolder->GetSpellProto())
