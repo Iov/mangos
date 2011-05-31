@@ -2001,12 +2001,6 @@ void Aura::TriggerSpell()
             case 52658:
             // Static Overload heroic (Ionar in Halls of Lightning)
             case 59795:
-            // Searing Light (normal&heroic) (XT-002 in Ulduar)
-            case 63018:
-            case 65121:
-            // Gravity Bomb (normal&heroic) (XT-002 in Ulduar)
-            case 63024:
-            case 64234:
             case 53563:                                     // Beacon of Light
             case 63018:                                     // Searing Light (normal&heroic) (XT-002 in Ulduar)
             case 65121:
