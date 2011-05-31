@@ -734,6 +734,11 @@ void Spell::EffectSchoolDMG(SpellEffectIndex effect_idx)
                     if (counter)
                         damage += (counter * owner->CalculateSpellDamage(unitTarget, m_spellInfo, EFFECT_INDEX_2) * damage) / 100.0f;
                 }
+                // Improved Felhunter
+                    if (owner->HasSpell(54037))
+                        m_caster->SetPower(POWER_MANA,m_caster->GetPower(POWER_MANA)+m_caster->GetMaxPower(POWER_MANA)*4/100);
+                    else if (owner->HasSpell(54038))
+                        m_caster->SetPower(POWER_MANA,m_caster->GetPower(POWER_MANA)+m_caster->GetMaxPower(POWER_MANA)*8/100);
                 // Conflagrate - consumes Immolate or Shadowflame
                 else if (m_spellInfo->TargetAuraState == AURA_STATE_CONFLAGRATE)
                 {
@@ -6138,6 +6143,14 @@ void Spell::DoSummonWild(SpellEffectIndex eff_idx, uint32 forceFaction)
 
     float radius = GetSpellRadius(sSpellRadiusStore.LookupEntry(m_spellInfo->EffectRadiusIndex[eff_idx]));
     int32 duration = GetSpellDuration(m_spellInfo);
+    // duration increase for Leviathan (Freya Wall)
+    switch (m_spellInfo->Id)
+    {
+        case 62907:
+        case 62947:
+            duration = 30000;
+            break;
+    }
     TempSummonType summonType = (duration == 0) ? TEMPSUMMON_DEAD_DESPAWN : TEMPSUMMON_TIMED_OR_DEAD_DESPAWN;
 
     int32 amount = damage > 0 ? damage : 1;
@@ -8879,6 +8892,28 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
 
                     return;
                 }
+                case 58941:                                 // Rock Shards
+                {
+                    if (unitTarget && m_originalCaster && roll_chance_i(50))
+                    {
+                        for (uint32 i = 0; i < 3; ++i)
+                        {
+                            m_originalCaster->CastSpell(unitTarget, 58689, true);
+                            m_originalCaster->CastSpell(unitTarget, 58692, true);
+                        }
+                        if (m_originalCaster->GetMap()->IsRegularDifficulty())
+                        {
+                            m_originalCaster->CastSpell(unitTarget, 58695, true);
+                            m_originalCaster->CastSpell(unitTarget, 58696, true);
+                        }
+                        else
+                        {
+                            m_originalCaster->CastSpell(unitTarget, 60883, true);
+                            m_originalCaster->CastSpell(unitTarget, 60884, true);
+                        }
+                    }
+                    return;
+                }
                 case 59317:                                 // Teleporting
                 {
                     if (!unitTarget || unitTarget->GetTypeId() != TYPEID_PLAYER)
@@ -8945,6 +8980,15 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
                     if (VehicleKit* vehicle = unitTarget->GetVehicleKit())  
                         if (Unit* seat = vehicle->GetPassenger(1))  
                             seat->ModifyPower(POWER_ENERGY,50);  
+                }
+                case 64475:                                 // Ignis Strength of the Creator stack decreasing
+                {
+                    if (!unitTarget || !m_caster)
+                        return;
+                    if (SpellAuraHolder *holder = unitTarget->GetSpellAuraHolder(64473))
+                        if (holder->ModStackAmount(-1))
+                            unitTarget->RemoveSpellAuraHolder(holder);
+                    break;
                 }
                 case 69200:                                 // Raging Spirit
                 {
@@ -10459,6 +10503,11 @@ void Spell::EffectResurrect(SpellEffectIndex /*eff_idx*/)
                 m_caster->CastSpell(m_caster, 23055, true, m_CastItem);
                 return;
             }
+            break;
+        // Defibrillate (Gnomish Army Knife) has 67% chance of success
+        case 54732:
+            if (roll_chance_i(33))
+                return;
             break;
         default:
             break;

@@ -437,7 +437,7 @@ m_isPersistent(false), m_in_use(0), m_spellAuraHolder(holder)
 
     // Start periodic on next tick or at aura apply
     if (!(spellproto->AttributesEx5 & SPELL_ATTR_EX5_START_PERIODIC_AT_APPLY))
-        m_periodicTimer = m_modifier.periodictime;
+        m_periodicTimer += m_modifier.periodictime;
 
     m_stacking = IsEffectStacking();
 }
@@ -479,7 +479,9 @@ Unit *caster, Item* castItem) : Aura(spellproto, eff, currentBasePoints, holder,
         case SPELL_EFFECT_APPLY_AREA_AURA_ENEMY:
             m_areaAuraType = AREA_AURA_ENEMY;
             if (target == caster_ptr)
-                m_modifier.m_auraname = SPELL_AURA_NONE;    // Do not do any effect on self
+                m_modifier.m_auraname = SPELL_AURA_NONE;    // Do not do any effect on self\
+            if ((spellproto->Id == 62532) && target->HasAura(64321) || target->HasAura(62619)) // Freya Conservator's Grip
+                m_modifier.m_auraname = SPELL_AURA_NONE;
             break;
         case SPELL_EFFECT_APPLY_AREA_AURA_PET:
             m_areaAuraType = AREA_AURA_PET;
@@ -7379,7 +7381,7 @@ void Aura::HandleShapeshiftBoosts(bool apply)
                     if ((*i)->GetSpellProto()->SpellIconID == 240 && (*i)->GetModifier()->m_miscvalue == 3)
                     {
                         int32 HotWMod = (*i)->GetModifier()->m_amount;
-                        if(GetModifier()->m_miscvalue == FORM_CAT)
+                        if(GetModifier()->m_miscvalue == FORM_CAT || GetModifier()->m_miscvalue == FORM_BEAR || GetModifier()->m_miscvalue == FORM_DIREBEAR)
                             HotWMod /= 2;
 
                         target->CastCustomSpell(target, HotWSpellId, &HotWMod, NULL, NULL, true, NULL, this);

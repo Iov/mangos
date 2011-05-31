@@ -2029,6 +2029,7 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
                     unMaxTargets = 4;
                     break;
                 case 30843:                                 // Enfeeble TODO: exclude top threat target from target selection
+                case 42005:
                 case 55665:                                 // Life Drain (h)
                 case 58917:                                 // Consume Minions
                 case 64604:                                 // Nature Bomb Freya
