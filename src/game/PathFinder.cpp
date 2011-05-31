@@ -51,7 +51,9 @@ PathInfo::PathInfo(const Unit* owner, const float destX, const float destY, cons
 
     createFilter();
 
-    if (m_navMesh && m_navMeshQuery && HaveTiles(endPoint) && !m_sourceUnit->hasUnitState(UNIT_STAT_IGNORE_PATHFINDING) && !(m_sourceUnit->GetTypeId() == TYPEID_UNIT ? ((Creature*)m_sourceUnit)->IsWorldBoss() : false))
+    if (m_navMesh && m_navMeshQuery && HaveTiles(endPoint) && !m_sourceUnit->hasUnitState(UNIT_STAT_IGNORE_PATHFINDING) &&
+        // Disable Pathfinding for World Bosses and Creatures with ScriptName 
+        !(m_sourceUnit->GetTypeId() == TYPEID_UNIT ? (((Creature*)m_sourceUnit)->IsWorldBoss() || !(((Creature*)m_sourceUnit)->GetScriptName().empty())) : false))
     {
         BuildPolyPath(startPoint, endPoint);
     }
@@ -86,7 +88,9 @@ bool PathInfo::Update(const float destX, const float destY, const float destZ,
     DEBUG_FILTER_LOG(LOG_FILTER_PATHFINDING, "++ PathInfo::Update() for %u \n", m_sourceUnit->GetGUID());
 
     // make sure navMesh works - we can run on map w/o mmap
-    if (!m_navMesh || !m_navMeshQuery || !HaveTiles(newDest) || m_sourceUnit->hasUnitState(UNIT_STAT_IGNORE_PATHFINDING)  || (m_sourceUnit->GetTypeId() == TYPEID_UNIT ? ((Creature*)m_sourceUnit)->IsWorldBoss() : false))
+    if (!m_navMesh || !m_navMeshQuery || !HaveTiles(newDest) || m_sourceUnit->hasUnitState(UNIT_STAT_IGNORE_PATHFINDING) ||
+        // Disable Pathfinding for World Bosses and Creatures with ScriptName 
+        (m_sourceUnit->GetTypeId() == TYPEID_UNIT ? (((Creature*)m_sourceUnit)->IsWorldBoss() || !(((Creature*)m_sourceUnit)->GetScriptName().empty())) : false))
     {
         BuildShortcut();
         m_type = PathType(PATHFIND_NORMAL | PATHFIND_NOT_USING_PATH);
