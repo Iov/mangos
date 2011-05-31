@@ -8822,6 +8822,45 @@ void Aura::PeriodicDummyTick()
                         caster->CastSpell(target, (spell->Id == 62717) ? 65722 : 65723, true, 0, this, this->GetCasterGuid(), this->GetSpellProto());
                     return;
                 }
+                case 64161:                                 // Empowered (Ulduar - Yogg Saron) 
+                { 
+                    uint8 stacks = 0; 
+                    float healthpct = target->GetHealthPercent(); 
+                    if (healthpct > 90.0f) 
+                        stacks = 9; 
+                    else if (healthpct > 80.0f) 
+                        stacks = 8; 
+                    else if (healthpct > 70.0f) 
+                        stacks = 7; 
+                    else if (healthpct > 60.0f) 
+                        stacks = 6; 
+                    else if (healthpct > 50.0f) 
+                        stacks = 5; 
+                    else if (healthpct > 40.0f) 
+                        stacks = 4; 
+                    else if (healthpct > 30.0f) 
+                        stacks = 3; 
+                    else if (healthpct > 20.0f) 
+                        stacks = 2; 
+                    else if (healthpct > 10.0f) 
+                        stacks = 1; 
+                    else 
+                    { 
+                        target->CastSpell(target, 64162, true); // ready for thorim Kill 
+                        target->RemoveAurasDueToSpell(65294); 
+                        return; 
+                    } 
+                     
+                    if (SpellAuraHolder *holder = target->GetSpellAuraHolder(65294)) 
+                    { 
+                        holder->SetStackAmount(stacks); 
+                    } 
+                    else 
+                    { 
+                        target->CastSpell(target, 65294, true); 
+                    } 
+                    return; 
+                }
                 case 69008:                                 // Soulstorm (OOC aura)
                 case 68870:                                 // Soulstorm
                 {
@@ -9610,6 +9649,7 @@ m_permanent(false), m_isRemovedOnShapeLost(true), m_deleted(false), m_in_use(0)
         case 26464:                                         // Mercurial Shield
         case 34027:                                         // Kill Command
         case 55166:                                         // Tidal Force
+        case 63050:                                         // Sanity (Ulduar - Yogg Saron)
         case 58914:                                         // Kill Command (pet part)
         case 64455:                                         // Feral Essence
         case 71564:                                         // Deadly Precision

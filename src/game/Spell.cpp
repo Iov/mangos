@@ -1968,6 +1968,10 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
                 case 63387:                                 // Rapid Burst
                 case 64531:                                 // Rapid Burst (h)
                 case 64218:                                 // Overcharge
+                case 62016:                                 // Charge Orb (Thorim) 
+                case 62978:                                 // Summon Guardian (Ulduar - Yogg Saron) 
+                case 63713:                                 // Dominate Mind (Ulduar - Yogg Saron)
+                case 64465:                                 // Shadow Beacon (Ulduar - Yogg Saron)
                 case 66336:                                 // Mistress' Kiss (Trial of the Crusader, ->
                 case 67077:                                 // -> Lord Jaraxxus encounter, 10 and 10 heroic)
                 case 66001:                                 // Touch of Darkness
@@ -1980,7 +1984,7 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
                 case 67296:
                 case 67297:
                 case 67298:
-                 case 73058:                                 // Blood Nova
+                case 73058:                                 // Blood Nova
                 case 72378:                                 // Blood Nova
                 case 71340:                                 // Pact of darkfallen (hack for script work)
                 case 72385:                                 // Boiling Blood (10N)
