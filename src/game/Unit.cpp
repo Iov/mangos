@@ -4490,9 +4490,15 @@ bool Unit::AddSpellAuraHolder(SpellAuraHolder *holder)
                 // m_auraname can be modified to SPELL_AURA_NONE for area auras, use original
                 AuraType aurNameReal = AuraType(aurSpellInfo->EffectApplyAuraName[i]);
 
-                // Strength of the Pack must stuck from different casters (Auriaya encounter, Ulduar)
-                if (foundHolder->GetId() == 64381)
-                    continue;
+                // Spells stack from different casters
+                switch(foundHolder->GetId())
+                {
+                    case 56152;    // Power Spark (Malygos encounter, EoE)
+                    case 64381:    // Strength of the Pack (Auriaya encounter, Ulduar)
+                        continue;
+                    default:
+                        break;
+                }
 
                 // Priest's Mind Flay must stack from different casters
                 if (const SpellEntry* sp = foundHolder->GetSpellProto())

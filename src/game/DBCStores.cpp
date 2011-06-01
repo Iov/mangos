@@ -569,6 +569,10 @@ void LoadDBCStores(const std::string& dataPath)
     sfix4->EffectTriggerSpell[EFFECT_INDEX_0] = 57988;
     sfix4->EffectTriggerSpell[EFFECT_INDEX_1] = 0;
 
+    //Power Spark
+    SpellEntry *sfix5 = const_cast<SpellEntry*>(sSpellStore.LookupEntry(56152));
+    sfix5->StackAmount = 2;
+
     for (uint32 j = 0; j < sSkillLineAbilityStore.GetNumRows(); ++j)
     {
         SkillLineAbilityEntry const *skillLine = sSkillLineAbilityStore.LookupEntry(j);
