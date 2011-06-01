@@ -430,7 +430,7 @@ m_isPersistent(false), m_in_use(0), m_spellAuraHolder(holder)
     if (modOwner && m_modifier.periodictime)
     {
         modOwner->ApplySpellMod(spellproto->Id, SPELLMOD_ACTIVATION_TIME, m_modifier.periodictime);
-        uint32 newperiodictime  = modOwner->CalculateAuraPeriodicTimeWithHaste(spellproto, m_modifier.periodictime, eff);
+        uint32 newperiodictime  = modOwner->CalculateAuraPeriodicTimeWithHaste(spellproto, m_modifier.periodictime);
         if (newperiodictime != m_modifier.periodictime)
             m_modifier.periodictime = newperiodictime;
     }
@@ -5591,6 +5591,11 @@ void Aura::HandlePeriodicTriggerSpell(bool apply, bool /*Real*/)
                     if (Unit* pCaster = GetCaster())
                         pCaster->CastSpell(pCaster, 66085, true, NULL, this);
                 }
+
+                return;
+            case 71441:                                     // Unstable Ooze Explosion (Icecrown Citadel encounter)
+                if (m_removeMode == AURA_REMOVE_BY_EXPIRE)
+                    target->CastSpell(target, 67375, true, NULL, this);
 
                 return;
             default:

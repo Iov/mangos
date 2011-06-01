@@ -3080,9 +3080,11 @@ void Map::SendObjectUpdates()
     }
     i_objectsToClientNotUpdate.clear();
 
-    for (std::set<Object*>::const_iterator it = i_objectsToClientUpdate.begin();it!= i_objectsToClientUpdate.end();++it)
-        (*it)->BuildUpdateData(update_players);
-
+    if (!i_objectsToClientUpdate.empty())
+    {
+        for (std::set<Object*>::const_iterator it = i_objectsToClientUpdate.begin();it!= i_objectsToClientUpdate.end();++it)
+            (*it)->BuildUpdateData(update_players);
+    }
     i_objectsToClientUpdate.clear();
 
     WorldPacket packet;                                     // here we allocate a std::vector with a size of 0x10000
