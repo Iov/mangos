@@ -1826,6 +1826,8 @@ void AchievementMgr::UpdateAchievementCriteria(AchievementCriteriaTypes type, ui
                 if (!data)
                     continue;
 
+                if(achievementCriteria->referredAchievement == 204 && (GetPlayer()->GetBattleGround()->GetPlayerScore(GetPlayer(),SCORE_DEATHS) > 0))
+                    continue;
 
                 if (!data->Meets(GetPlayer(),unit))
                     continue;
