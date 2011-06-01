@@ -4488,6 +4488,9 @@ bool Unit::AddSpellAuraHolder(SpellAuraHolder *holder)
                 if (foundHolder->GetId() == 64381)
                     continue;
 
+                if (foundHolder->GetId() == 56152)
+                    continue;
+
                 // Priest's Mind Flay must stack from different casters
                 if (const SpellEntry* sp = foundHolder->GetSpellProto())
                 {
