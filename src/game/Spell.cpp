@@ -3480,7 +3480,14 @@ void Spell::prepare(SpellCastTargets const* targets, Aura* triggeredByAura)
         // will show cast bar
         SendSpellStart();
 
-        TriggerGlobalCooldown();
+        // exception for spells which should not trigger global cooldown
+        switch(m_spellInfo->Id)
+        {
+            case 30823:    // Shamanistic Rage
+                break;
+            default:
+                TriggerGlobalCooldown();
+        }
     }
     // execute triggered or without cast time explicitly in call point
     else if(m_timer == 0 || m_IsTriggeredSpell)
