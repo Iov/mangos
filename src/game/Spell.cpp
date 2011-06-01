@@ -4916,6 +4916,14 @@ void Spell::TakePower()
     if(m_CastItem || m_triggeredByAuraSpell)
         return;
 
+    // Maybe m_isTriggeredSpell == true
+    // Not sure, so add exception list first
+    switch(m_spellInfo->Id)
+    {
+        case 50782: // Slam, triggered
+            return;
+    }
+
     // health as power used
     if(m_spellInfo->powerType == POWER_HEALTH)
     {
