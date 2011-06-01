@@ -217,7 +217,7 @@ class MANGOS_DLL_SPEC Pet : public Creature
         void UpdateManaRegen();
 
         bool CanTakeMoreActiveSpells(uint32 SpellIconID);
-        MANGOS_DLL_SPEC void ToggleAutocast(uint32 spellid, bool apply, bool force = false);
+        void ToggleAutocast(uint32 spellid, bool apply, bool force = false);
 
         void ApplyModeFlags(PetModeFlags mode, bool apply);
         PetModeFlags GetModeFlags() const { return m_petModeFlags; }
@@ -255,7 +255,7 @@ class MANGOS_DLL_SPEC Pet : public Creature
         void _LoadSpells();
         void _SaveSpells();
 
-        MANGOS_DLL_SPEC bool addSpell(uint32 spell_id,ActiveStates active = ACT_DECIDE, PetSpellState state = PETSPELL_NEW, PetSpellType type = PETSPELL_NORMAL);
+        bool addSpell(uint32 spell_id,ActiveStates active = ACT_DECIDE, PetSpellState state = PETSPELL_NEW, PetSpellType type = PETSPELL_NORMAL);
         bool learnSpell(uint32 spell_id);
         void learnSpellHighRank(uint32 spellid);
         void InitLevelupSpellsForLevel();
@@ -288,7 +288,7 @@ class MANGOS_DLL_SPEC Pet : public Creature
         float GetPetFollowAngle() const { return m_petFollowAngle; }
         void SetPetFollowAngle(float angle) { m_petFollowAngle = angle; }
 
-        MANGOS_DLL_SPEC Unit* GetOwner() const;
+        Unit* GetOwner() const;
         bool GetNeedSave() const { return m_needSave; }
         void SetNeedSave(bool needSave) { m_needSave = needSave; }
         uint8 GetPetCounter() { return m_petCounter; }
