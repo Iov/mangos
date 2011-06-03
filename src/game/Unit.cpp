@@ -4493,7 +4493,7 @@ bool Unit::AddSpellAuraHolder(SpellAuraHolder *holder)
                 // Spells stack from different casters
                 switch(foundHolder->GetId())
                 {
-                    case 56152;    // Power Spark (Malygos encounter, EoE)
+                    case 56152:    // Power Spark (Malygos encounter, EoE)
                     case 64381:    // Strength of the Pack (Auriaya encounter, Ulduar)
                         continue;
                     default:
