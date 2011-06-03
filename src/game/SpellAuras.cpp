@@ -3620,7 +3620,7 @@ void Aura::HandleAuraModShapeshift(bool apply, bool Real)
         target->RemoveSpellsCausingAura(SPELL_AURA_MOD_SHAPESHIFT, GetHolder());
 
         // need send to client not form active state, or at re-apply form client go crazy
-        // target->SendForcedObjectUpdate();
+        target->SendForcedObjectUpdate();
 
         if (modelid > 0)
             target->SetDisplayId(modelid);
@@ -3795,6 +3795,9 @@ void Aura::HandleAuraModShapeshift(bool apply, bool Real)
 
     if(target->GetTypeId() == TYPEID_PLAYER)
         ((Player*)target)->InitDataForForm();
+
+    target->SendForcedObjectUpdate();
+
 }
 
 void Aura::HandleAuraTransform(bool apply, bool Real)
@@ -4703,6 +4706,15 @@ void Aura::HandleAuraModStun(bool apply, bool Real)
         data << target->GetPackGUID();
         data << uint32(0);
         target->SendMessageToSet(&data, true);
+
+        // Deep Freeze damage part
+        if(GetId() == 44572 && !(target->IsCharmerOrOwnerPlayerOrPlayerItself() || target->IsVehicle()) && target->IsImmuneToSpellEffect(GetSpellProto(), EFFECT_INDEX_0))
+        {
+            Unit* caster = GetCaster();
+            if(!caster)
+                return;
+            caster->CastSpell(target, 71757, true); 
+        }
 
         // Summon the Naj'entus Spine GameObject on target if spell is Impaling Spine
         if(GetId() == 39837)
@@ -8987,10 +8999,12 @@ void Aura::HandleAuraLinked(bool apply, bool Real)
 
     if (apply)
     {
-        if (GetCaster()->GetTypeId() == TYPEID_PLAYER &&
+        if (GetCaster() &&
+            GetCaster()->GetTypeId() == TYPEID_PLAYER &&
+            GetTarget() &&
             GetTarget()->GetTypeId() != TYPEID_PLAYER &&
-            spellInfo->AttributesEx  &  SPELL_ATTR_EX_UNK28
-            && spellInfo->Attributes &  SPELL_ATTR_UNK8)
+            spellInfo->AttributesEx  &  SPELL_ATTR_EX_UNK28 &&
+            spellInfo->Attributes &  SPELL_ATTR_UNK8)
         {
             float healBonus   = float(GetCaster()->GetTotalAuraModifier(SPELL_AURA_MOD_HEALING_PCT))/100.0;
             if (healBonus < 0.0)
