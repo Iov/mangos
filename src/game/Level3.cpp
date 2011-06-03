@@ -4378,11 +4378,7 @@ bool ChatHandler::HandleCharacterLevelCommand(char* args)
         newlevel = STRONG_MAX_LEVEL;
 
     if (newlevel > int32(sWorld.getConfig(CONFIG_UINT32_MAX_PLAYER_LEVEL)))
-<<<<<<< HEAD
-        newlevel = sWorld.getConfig(CONFIG_UINT32_MAX_PLAYER_LEVEL);
-=======
         newlevel = int32(sWorld.getConfig(CONFIG_UINT32_MAX_PLAYER_LEVEL));
->>>>>>> mr2/master
 
     HandleCharacterLevel(target, target_guid, oldlevel, newlevel);
 
@@ -4430,11 +4426,7 @@ bool ChatHandler::HandleLevelUpCommand(char* args)
         newlevel = STRONG_MAX_LEVEL;
 
     if (newlevel > int32(sWorld.getConfig(CONFIG_UINT32_MAX_PLAYER_LEVEL)))
-<<<<<<< HEAD
-        newlevel = sWorld.getConfig(CONFIG_UINT32_MAX_PLAYER_LEVEL);
-=======
         newlevel = int32(sWorld.getConfig(CONFIG_UINT32_MAX_PLAYER_LEVEL));
->>>>>>> mr2/master
 
     HandleCharacterLevel(target, target_guid, oldlevel, newlevel);
 
