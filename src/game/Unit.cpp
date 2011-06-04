@@ -4043,7 +4043,7 @@ bool Unit::IsNonMeleeSpellCasted(bool withDelayed, bool skipChanneled, bool skip
     else if ( !skipChanneled && m_currentSpells[CURRENT_CHANNELED_SPELL] &&
         (m_currentSpells[CURRENT_CHANNELED_SPELL]->getState() != SPELL_STATE_FINISHED) )
         {
-            if (!(m_currentSpells[CURRENT_GENERIC_SPELL]->m_spellInfo->AttributesEx2 & SPELL_ATTR_EX2_NOT_RESET_AUTOATTACK))
+            if (!(m_currentSpells[CURRENT_CHANNELED_SPELL]->m_spellInfo->AttributesEx2 & SPELL_ATTR_EX2_NOT_RESET_AUTOATTACK))
                 return(true);
         }
 
@@ -5025,7 +5025,14 @@ void Unit::RemoveAurasDueToSpellBySteal(uint32 spellId, ObjectGuid casterGuid, U
         new_holder->AddAura(new_aur, new_aur->GetEffIndex());
     }
 
-    if (holder->ModStackAmount(-1))
+    bool needSetCharge = false;
+    if (holder->GetSpellProto()->AttributesEx7 & SPELL_ATTR_EX7_DISPEL_CHARGES)
+    {
+        if (holder->DropAuraCharge())
+            RemoveSpellAuraHolder(holder, AURA_REMOVE_BY_DISPEL);
+        needSetCharge = true;
+    }
+    else if (holder->ModStackAmount(-1))
         // Remove aura as dispel
         RemoveSpellAuraHolder(holder, AURA_REMOVE_BY_DISPEL);
 
@@ -5033,6 +5040,9 @@ void Unit::RemoveAurasDueToSpellBySteal(uint32 spellId, ObjectGuid casterGuid, U
     new_holder->SetIsSingleTarget(false);
 
     stealer->AddSpellAuraHolder(new_holder);
+
+    if (needSetCharge)
+        new_holder->SetAuraCharges(1);
 }
 
 void Unit::RemoveAurasDueToSpellByCancel(uint32 spellId)
@@ -10430,12 +10440,12 @@ void CharmInfo::InitPossessCreateSpells()
     if(m_unit->GetTypeId() == TYPEID_PLAYER)                //possessed players don't have spells, keep the action bar empty
         return;
 
-    for(uint32 x = 0; x < CREATURE_MAX_SPELLS; ++x)
+    for(uint32 x = 0; x <= ((Creature*)m_unit)->GetSpellMaxIndex(); ++x)
     {
-        if (IsPassiveSpell(((Creature*)m_unit)->m_spells[x]))
-            m_unit->CastSpell(m_unit, ((Creature*)m_unit)->m_spells[x], true);
+        if (IsPassiveSpell(((Creature*)m_unit)->GetSpell(x)))
+            m_unit->CastSpell(m_unit, ((Creature*)m_unit)->GetSpell(x), true);
         else
-            AddSpellToActionBar(((Creature*)m_unit)->m_spells[x], ACT_PASSIVE);
+            AddSpellToActionBar(((Creature*)m_unit)->GetSpell(x), ACT_PASSIVE);
     }
 }
 
@@ -10444,9 +10454,9 @@ void CharmInfo::InitVehicleCreateSpells()
     for (uint32 x = ACTION_BAR_INDEX_START; x < ACTION_BAR_INDEX_END; ++x)
         SetActionBar(x, 0, ActiveStates(0x8 + x));
 
-    for (uint32 x = 0; x < CREATURE_MAX_SPELLS; ++x)
+    for (uint32 x = 0; x <= ((Creature*)m_unit)->GetSpellMaxIndex(); ++x)
     {
-        uint32 spellId = ((Creature*)m_unit)->m_spells[x];
+        uint32 spellId = ((Creature*)m_unit)->GetSpell(x);
 
         if (!spellId)
             continue;
@@ -10468,9 +10478,9 @@ void CharmInfo::InitCharmCreateSpells()
 
     InitPetActionBar();
 
-    for(uint32 x = 0; x < CREATURE_MAX_SPELLS; ++x)
+    for(uint32 x = 0; x <= ((Creature*)m_unit)->GetSpellMaxIndex(); ++x)
     {
-        uint32 spellId = ((Creature*)m_unit)->m_spells[x];
+        uint32 spellId = ((Creature*)m_unit)->GetSpell(x);
 
         if(!spellId)
         {
