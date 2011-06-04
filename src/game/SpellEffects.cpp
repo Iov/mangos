@@ -3298,7 +3298,10 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
                     {
                         SpellEntry const *spellInfo = sSpellStore.LookupEntry(itr->first);
 
-                        if (spellInfo->SpellFamilyName == SPELLFAMILY_HUNTER && spellInfo->Id != 23989 && GetSpellRecoveryTime(spellInfo) > 0 )
+                        if (spellInfo->SpellFamilyName == SPELLFAMILY_HUNTER && 
+                            spellInfo->Id != 23989 &&
+                            spellInfo->SpellIconID != 1680 &&
+                            GetSpellRecoveryTime(spellInfo) > 0 )
                             ((Player*)m_caster)->RemoveSpellCooldown((itr++)->first,true);
                         else
                             ++itr;
@@ -3590,13 +3593,23 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
             if(m_spellInfo->SpellIconID == 1737)
             {
                 // Living ghoul as a target
-                if (unitTarget->GetEntry() == 26125 && unitTarget->isAlive())
+                if (unitTarget->isAlive() && unitTarget->GetObjectGuid().IsPet() && unitTarget->GetEntry() == 26125)
                 {
-                    int32 bp = unitTarget->GetMaxHealth()*0.25f;
+                    int32 bp = int32(unitTarget->GetMaxHealth()/4.0f);
                     unitTarget->CastCustomSpell(unitTarget,47496,&bp,NULL,NULL,true);
+                    unitTarget->CastSpell(unitTarget, 53730, true, NULL, NULL, m_caster->GetObjectGuid());
+                    unitTarget->CastSpell(unitTarget,43999,true);
+                    if (unitTarget->getDeathState() == CORPSE)
+                        unitTarget->RemoveFromWorld();
                 }
-                else
-                    return;
+                else if (!unitTarget->isAlive())
+                {
+                    m_caster->CastSpell(unitTarget, 50444, true, NULL, NULL, m_caster->GetObjectGuid());
+                    m_caster->CastSpell(unitTarget, 53730, true, NULL, NULL, m_caster->GetObjectGuid());
+                    if (unitTarget->getDeathState() == CORPSE)
+                        unitTarget->RemoveFromWorld();
+                }
+                return;
             }
             // Death Coil
             if (m_spellInfo->SpellFamilyFlags & UI64LIT(0x002000))
@@ -5495,7 +5508,9 @@ void Spell::EffectDispel(SpellEffectIndex eff_idx)
                 if (unitTarget->HasAura(50536))
                     continue;
 
-            if (holder->GetAuraCharges() > 1)
+            if (holder->GetSpellProto()->AttributesEx7 & SPELL_ATTR_EX7_DISPEL_CHARGES && holder->GetAuraCharges() > 0)
+                dispel_list.push_back(std::pair<SpellAuraHolder* ,uint32>(holder, 1));
+            else if (holder->GetAuraCharges() > 1)
                 dispel_list.push_back(std::pair<SpellAuraHolder* ,uint32>(holder, holder->GetAuraCharges()));
             else
                 dispel_list.push_back(std::pair<SpellAuraHolder* ,uint32>(holder, holder->GetStackAmount()));
