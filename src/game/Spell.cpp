@@ -1661,7 +1661,6 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
                 case 33711:                                 // Murmur's Touch
                 case 38794:                                 // Murmur's Touch (h)
                 case 48278:                                 // Paralyze (Utgarde Pinnacle)
-                case 55479:                                 // Forced Obedience (Naxxramas - Razovius encounter)
                 case 50988:                                 // Glare of the Tribunal (Halls of Stone)
                 case 55479:                                 // Forced Obedience (Naxxramas - Razovius encounter)
                 case 59870:                                 // Glare of the Tribunal (h) (Halls of Stone)

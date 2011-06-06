@@ -5840,6 +5840,10 @@ void Aura::HandleDamagePercentTaken(bool apply, bool Real)
     if (!Real)
         return;
 
+    Unit *caster = GetCaster();
+    if (!caster)
+        return;
+
     // For prevent double apply bonuses
     bool loading = (target->GetTypeId() == TYPEID_PLAYER && ((Player*)target)->GetSession()->PlayerLoading());
 
