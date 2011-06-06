@@ -2197,6 +2197,9 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
                         // Pet will be following owner, this makes him stop
                         target->addUnitState(UNIT_STAT_STUNNED);
                         return;
+                    case 52921:                             // Arc Lightning (Halls of Lighning: Loken)
+                        target->CastSpell(target, 52924, false);
+                        return;
                     case 55328:                                 // Stoneclaw Totem I
                         target->CastSpell(target, 5728, true);
                         return;
@@ -4554,7 +4557,7 @@ void Aura::HandleModCharm(bool apply, bool Real)
             // restore faction
             if(((Creature*)target)->IsPet())
             {
-                if(Unit* owner = target->GetOwner())
+                if(Unit* owner = ((Pet*)target)->GetOwner())
                     target->setFaction(owner->getFaction());
                 else if(cinfo)
                     target->setFaction(cinfo->faction_A);
@@ -9334,6 +9337,12 @@ bool Aura::IsLastAuraOnHolder()
         if (i != GetEffIndex() && GetHolder()->m_auras[i])
             return false;
     return true;
+}
+
+bool Aura::HasMechanic(uint32 mechanic) const
+{
+    return GetSpellProto()->Mechanic == mechanic ||
+        GetSpellProto()->EffectMechanic[m_effIndex] == mechanic;
 }
 
 SpellAuraHolder::SpellAuraHolder(SpellEntry const* spellproto, Unit *target, WorldObject *caster, Item *castItem) :
