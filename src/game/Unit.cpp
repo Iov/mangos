@@ -307,6 +307,10 @@ Unit::~Unit()
     delete m_charmInfo;
     delete m_vehicleInfo;
 
+    // should solve crashes in following MANGOS_ASSERT(m_deletedAuras.size() == 0)
+    // normally this should be called in RemoveFromWorld()
+    CleanupDeletedAuras();
+
     // those should be already removed at "RemoveFromWorld()" call
     MANGOS_ASSERT(m_gameObj.size() == 0);
     MANGOS_ASSERT(m_dynObjGUIDs.size() == 0);
