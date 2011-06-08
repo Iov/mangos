@@ -7949,13 +7949,14 @@ bool Unit::IsImmuneToSpell(SpellEntry const* spellInfo)
 
         AuraList const& immuneAuraApply = GetAurasByType(SPELL_AURA_MECHANIC_IMMUNITY_MASK);
         for(AuraList::const_iterator iter = immuneAuraApply.begin(); iter != immuneAuraApply.end(); ++iter)
+        {
+            if ((*iter)->GetId() == 46924 && mechanic == MECHANIC_DISARM)
+                continue;
+
             if ((*iter)->GetModifier()->m_miscvalue & (1 << (mechanic-1)))
-            {
-                if((*iter)->GetId() == 46924 && mechanic == MECHANIC_DISARM) // Hack to remove Bladestorm disarm immunity
-                    continue;
-            
                 return true;
-            }
+        }
+
     }
 
     return false;
@@ -7984,14 +7985,17 @@ bool Unit::IsImmuneToSpellEffect(SpellEntry const* spellInfo, SpellEffectIndex i
         AuraList const& immuneAuraApply = GetAurasByType(SPELL_AURA_MECHANIC_IMMUNITY_MASK);
         for(AuraList::const_iterator iter = immuneAuraApply.begin(); iter != immuneAuraApply.end(); ++iter)
         {
-            if ((*iter)->GetModifier()->m_miscvalue & (1 << (mechanic-1)))
+            if ((*iter)->GetId() == 46924)
             {
-                // Bladestorm exception (Psychic Horror check here)
-                if ((*iter)->GetId() == 46924 && mechanic == MECHANIC_DISARM)
+                if (mechanic == MECHANIC_DISARM)
                     continue;
-
-                return true;
+                else if (spellInfo->EffectMechanic[index] & IMMUNE_TO_MOVEMENT_IMPAIRMENT_AND_LOSS_CONTROL_MASK ||
+                    spellInfo->Mechanic & IMMUNE_TO_MOVEMENT_IMPAIRMENT_AND_LOSS_CONTROL_MASK)
+                    return true;
             }
+
+            if ((*iter)->GetModifier()->m_miscvalue & (1 << (mechanic-1)))
+                return true;
         }
     }
 
@@ -8014,32 +8018,6 @@ bool Unit::IsImmuneToSpellEffect(SpellEntry const* spellInfo, SpellEffectIndex i
             for(AuraList::const_iterator iter = immuneAuraApply.begin(); iter != immuneAuraApply.end(); ++iter)
                 if ((*iter)->GetModifier()->m_miscvalue & schoolMask)
                     return true;
-        }
-
-        AuraList const& immuneMechanicAuraApply = GetAurasByType(SPELL_AURA_MECHANIC_IMMUNITY_MASK);
-        // need more checks like ^ there
-        if (!immuneMechanicAuraApply.empty())
-        {
-            for(AuraList::const_iterator i = immuneMechanicAuraApply.begin(); i != immuneMechanicAuraApply.end(); ++i)
-            {
-                if ((spellInfo->EffectMechanic[index] & (*i)->GetMiscValue() ||
-                    spellInfo->Mechanic & (*i)->GetMiscValue()) ||
-                    ((*i)->GetId() == 46924 && // Bladestorm Immunity
-                    spellInfo->EffectMechanic[index] & IMMUNE_TO_MOVEMENT_IMPAIRMENT_AND_LOSS_CONTROL_MASK ||
-                    spellInfo->Mechanic & IMMUNE_TO_MOVEMENT_IMPAIRMENT_AND_LOSS_CONTROL_MASK))
-               
-                {
-                    // Additional Bladestorm Immunity check (not immuned to disarm / bleed)
-                    if ((*i)->GetId() == 46924 && (spellInfo->Mechanic == MECHANIC_DISARM || spellInfo->Mechanic == MECHANIC_BLEED || spellInfo->Mechanic == MECHANIC_INFECTED))
-                        continue;
-                
-                    // Additional check if Player has BG Preparation aura
-                    if((*i)->GetId() == 44521 && (spellInfo->Mechanic == MECHANIC_MOUNT))
-                        continue;
-
-                    return true;
-                }
-            }
         }
     }
 
