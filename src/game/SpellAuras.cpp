@@ -557,6 +557,7 @@ void Aura::SetModifier(AuraType t, int32 a, uint32 pt, int32 miscValue)
     m_modifier.m_amount = a;
     m_modifier.m_miscvalue = miscValue;
     m_modifier.periodictime = pt;
+    m_modifier.m_baseamount = a;
 }
 
 void Aura::Update(uint32 diff)
@@ -902,10 +903,6 @@ void Aura::ApplyModifier(bool apply, bool Real)
 
 bool Aura::isAffectedOnSpell(SpellEntry const *spell) const
 {
-    // Check family name
-    if (spell->SpellFamilyName != GetSpellProto()->SpellFamilyName)
-        return false;
-
     // hacks for bad DBC data
     switch (GetId())
     {
@@ -919,22 +916,16 @@ bool Aura::isAffectedOnSpell(SpellEntry const *spell) const
             break;
     }
 
-    // Check EffectClassMask
-    uint32 const *ptr = getAuraSpellClassMask();
-    if (((uint64*)ptr)[0] & spell->SpellFamilyFlags)
-        return true;
-    if (ptr[2] & spell->SpellFamilyFlags2)
-        return true;
-    return false;
+    return spell->IsFitToFamily(SpellFamily(GetSpellProto()->SpellFamilyName), GetAuraSpellClassMask());
 }
 
 bool Aura::CanProcFrom(SpellEntry const *spell, uint32 EventProcEx, uint32 procEx, bool active, bool useClassMask) const
 {
     // Check EffectClassMask
-    uint32 const *ptr = getAuraSpellClassMask();
+    ClassFamilyMask const& mask  = GetAuraSpellClassMask();
 
     // if no class mask defined, or spell_proc_event has SpellFamilyName=0 - allow proc
-    if (!useClassMask || (!((uint64*)ptr)[0] && !ptr[2]))
+    if (!useClassMask || !mask)
     {
         if (!(EventProcEx & PROC_EX_EX_TRIGGER_ALWAYS))
         {
@@ -960,14 +951,8 @@ bool Aura::CanProcFrom(SpellEntry const *spell, uint32 EventProcEx, uint32 procE
     {
         // SpellFamilyName check is performed in SpellMgr::IsSpellProcEventCanTriggeredBy and it is done once for whole holder
         // note: SpellFamilyName is not checked if no spell_proc_event is defined
-
-        if (((uint64*)ptr)[0] & spell->SpellFamilyFlags)
-            return true;
-
-        if (ptr[2] & spell->SpellFamilyFlags2)
-            return true;
+        return mask.IsFitToFamilyMask(spell->SpellFamilyFlags);
     }
-    return false;
 }
 
 void Aura::ReapplyAffectedPassiveAuras( Unit* target, bool owner_mode )
@@ -1106,14 +1091,14 @@ void Aura::HandleAddModifier(bool apply, bool Real)
         // Everlasting Affliction, overwrite wrong data, if will need more better restore support of spell_affect table
         if (spellProto->SpellFamilyName == SPELLFAMILY_WARLOCK && spellProto->SpellIconID == 3169)
         {
-            m_spellmod->mask = UI64LIT(0x0000010000000002); // Corruption and Unstable Affliction
-            m_spellmod->mask2 = 0x00000000;
+            // Corruption and Unstable Affliction
+            m_spellmod->mask = ClassFamilyMask::create<CF_WARLOCK_CORRUPTION, CF_WARLOCK_UNSTABLE_AFFLICTION>();
         }
         // Improved Flametongue Weapon, overwrite wrong data, maybe time re-add table
         else if (spellProto->Id == 37212)
         {
-            m_spellmod->mask = UI64LIT(0x0000000000200000); // Flametongue Weapon (Passive)
-            m_spellmod->mask2 = 0x00000000;
+            // Flametongue Weapon (Passive)
+            m_spellmod->mask = ClassFamilyMask::create<CF_SHAMAN_FLAMETONGUE_WEAPON>();
         }
     }
 
@@ -1844,7 +1829,7 @@ void Aura::TriggerSpell()
                         {
                             SpellEntry const* spell = itr->second->GetSpellProto();
                             if (spell->SpellFamilyName == SPELLFAMILY_SHAMAN &&
-                                (spell->SpellFamilyFlags & UI64LIT(0x0000000000000400)))
+                                spell->SpellFamilyFlags.test<CF_SHAMAN_LIGHTNING_SHIELD>())
                                 return;
                         }
                         triggerTarget->RemoveAurasDueToSpell(28820);
@@ -2421,7 +2406,7 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
                 }
 
                 // Overpower
-                if (GetSpellProto()->SpellFamilyFlags & UI64LIT(0x0000000000000004))
+                if (GetSpellProto()->SpellFamilyFlags.test<CF_WARRIOR_OVERPOWER>())
                 {
                     // Must be casting target
                     if (!target->IsNonMeleeSpellCasted(false))
@@ -2513,7 +2498,7 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
                 }
 
                 // Earth Shield
-                if ((GetSpellProto()->SpellFamilyFlags & UI64LIT(0x40000000000)))
+                if (GetSpellProto()->SpellFamilyFlags.test<CF_SHAMAN_EARTH_SHIELD>())
                 {
                     // prevent double apply bonuses
                     if (target->GetTypeId() != TYPEID_PLAYER || !((Player*)target)->GetSession()->PlayerLoading())
@@ -2850,7 +2835,7 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
             case 57934: //Tricks of Trade
             {
                 if(Unit * caster = GetCaster())
-                    caster->SetThreatRedirectionTarget(0, 0);
+                    caster->SetThreatRedirectionTarget(ObjectGuid(), 0);
                 return;
             }
             case 52098:                                     // Charge Up
@@ -2927,7 +2912,7 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
         }
 
         // Living Bomb
-        if (GetSpellProto()->SpellFamilyName == SPELLFAMILY_MAGE && (GetSpellProto()->SpellFamilyFlags & UI64LIT(0x2000000000000)))
+        if (GetSpellProto()->SpellFamilyName == SPELLFAMILY_MAGE && GetSpellProto()->SpellFamilyFlags.test<CF_MAGE_LIVING_BOMB>())
         {
             if (m_removeMode == AURA_REMOVE_BY_EXPIRE || m_removeMode == AURA_REMOVE_BY_DISPEL)
                 if (this->GetCaster())
@@ -3120,7 +3105,7 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
         case SPELLFAMILY_WARLOCK:
         {
             // Haunt
-            if (GetSpellProto()->SpellIconID == 3172 && (GetSpellProto()->SpellFamilyFlags & UI64LIT(0x0004000000000000)))
+            if (GetSpellProto()->SpellIconID == 3172 && GetSpellProto()->SpellFamilyFlags.test<CF_WARLOCK_HAUNT>())
             {
                 // NOTE: for avoid use additional field damage stored in dummy value (replace unused 100%
                 if (apply)
@@ -3144,7 +3129,7 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
                 {
                     // Reduce backfire damage (dot damage) from Shadow Word: Death
                     // aura have wrong effectclassmask, so use hardcoded value
-                    m_spellmod = new SpellModifier(SPELLMOD_DOT,SPELLMOD_PCT,m_modifier.m_amount,GetId(),UI64LIT(0x0000200000000000));
+                    m_spellmod = new SpellModifier(SPELLMOD_DOT, SPELLMOD_PCT, m_modifier.m_amount, GetId(), ClassFamilyMask::create<CF_PRIEST_SHADOW_WORD_DEATH_SELF>());
                 }
                 ((Player*)target)->AddSpellMod(m_spellmod, apply);
                 return;
@@ -3163,7 +3148,7 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
 
                     if (apply)
                         // dummy not have proper effectclassmask
-                        m_spellmod  = new SpellModifier(SPELLMOD_DOT,SPELLMOD_FLAT,m_modifier.m_amount/7,GetId(),UI64LIT(0x001000000000));
+                        m_spellmod  = new SpellModifier(SPELLMOD_DOT, SPELLMOD_FLAT, m_modifier.m_amount/7, GetId(), ClassFamilyMask::create<CF_DRUID_LIFEBLOOM>());
 
                     ((Player*)target)->AddSpellMod(m_spellmod, apply);
                     return;
@@ -3198,7 +3183,7 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
             }
 
             // Lifebloom
-            if (GetSpellProto()->SpellFamilyFlags & UI64LIT(0x1000000000))
+            if (GetSpellProto()->SpellFamilyFlags.test<CF_DRUID_LIFEBLOOM>())
             {
                 if (apply)
                 {
@@ -4812,7 +4797,7 @@ void Aura::HandleAuraModStun(bool apply, bool Real)
         }
 
         // Wyvern Sting
-        if (GetSpellProto()->SpellFamilyName == SPELLFAMILY_HUNTER && GetSpellProto()->SpellFamilyFlags & UI64LIT(0x0000100000000000))
+        if (GetSpellProto()->SpellFamilyName == SPELLFAMILY_HUNTER && GetSpellProto()->SpellFamilyFlags.test<CF_HUNTER_WYVERN_STING2>())
         {
             Unit* caster = GetCaster();
             if( !caster || caster->GetTypeId()!=TYPEID_PLAYER )
@@ -4882,7 +4867,7 @@ void Aura::HandleModStealth(bool apply, bool Real)
                         target->CastCustomSpell(target,31665,&bp,NULL,NULL,true);
                     }
                     // Overkill
-                    else if ((*i)->GetId() == 58426 && GetSpellProto()->SpellFamilyFlags & UI64LIT(0x0000000000400000))
+                    else if ((*i)->GetId() == 58426 && GetSpellProto()->SpellFamilyFlags.test<CF_ROGUE_STEALTH>())
                     {
                         target->CastSpell(target, 58427, true);
                     }
@@ -4897,7 +4882,7 @@ void Aura::HandleModStealth(bool apply, bool Real)
 
         // Vanish (triggered, normal stealth need apply before remove advanced stealth)
         if (target->GetTypeId() == TYPEID_PLAYER && m_removeMode == AURA_REMOVE_BY_EXPIRE &&
-            GetSpellProto()->IsFitToFamily(SPELLFAMILY_ROGUE, UI64LIT(0x000000000800)))
+            GetSpellProto()->IsFitToFamily<SPELLFAMILY_ROGUE, CF_ROGUE_VANISH>())
         {
             uint32 spellId = 1784;                          // Stealth
             // reset cooldown on it if needed
@@ -5909,7 +5894,7 @@ void Aura::HandleDamagePercentTaken(bool apply, bool Real)
             }
         }
         // Hand of Salvation (only it have this aura and mask)
-        else if (GetSpellProto()->IsFitToFamily(SPELLFAMILY_PALADIN, UI64LIT(0x0000000000000100)))
+        else if (GetSpellProto()->IsFitToFamily<SPELLFAMILY_PALADIN, CF_PALADIN_HAND_OF_SALVATION1>())
         {
             // Glyph of Salvation
             if (target->GetObjectGuid() == GetCasterGuid())
@@ -5948,7 +5933,7 @@ void Aura::HandlePeriodicDamage(bool apply, bool Real)
             case SPELLFAMILY_WARRIOR:
             {
                 // Rend
-                if (spellProto->SpellFamilyFlags & UI64LIT(0x0000000000000020))
+                if (spellProto->SpellFamilyFlags.test<CF_WARRIOR_REND>())
                 {
                     // $0.2*(($MWB+$mwb)/2+$AP/14*$MWS) bonus per tick
                     float ap = caster->GetTotalAttackPowerValue(BASE_ATTACK);
@@ -5974,7 +5959,7 @@ void Aura::HandlePeriodicDamage(bool apply, bool Real)
             case SPELLFAMILY_DRUID:
             {
                 // Rip
-                if (spellProto->SpellFamilyFlags & UI64LIT(0x000000000000800000))
+                if (spellProto->SpellFamilyFlags.test<CF_DRUID_RIP_BITE>())
                 {
                     // 0.01*$AP*cp
                     if (caster->GetTypeId() != TYPEID_PLAYER)
@@ -5999,7 +5984,7 @@ void Aura::HandlePeriodicDamage(bool apply, bool Real)
             case SPELLFAMILY_ROGUE:
             {
                 // Rupture
-                if (spellProto->SpellFamilyFlags & UI64LIT(0x000000000000100000))
+                if (spellProto->SpellFamilyFlags.test<CF_ROGUE_RUPTURE>())
                 {
                     if (caster->GetTypeId() != TYPEID_PLAYER)
                         break;
@@ -6018,7 +6003,7 @@ void Aura::HandlePeriodicDamage(bool apply, bool Real)
             case SPELLFAMILY_PALADIN:
             {
                 // Holy Vengeance / Blood Corruption
-                if (spellProto->SpellFamilyFlags & UI64LIT(0x0000080000000000) && spellProto->SpellVisual[0] == 7902)
+                if (spellProto->SpellFamilyFlags.test<CF_PALADIN_SEAL_OF_CORRUPT_VENGE>() && spellProto->SpellVisual[0] == 7902)
                 {
                     // AP * 0.025 + SPH * 0.013 bonus per tick
                     float ap = caster->GetTotalAttackPowerValue(BASE_ATTACK);
@@ -7063,19 +7048,13 @@ void Aura::HandleNoReagentUseAura(bool /*Apply*/, bool Real)
     if(target->GetTypeId() != TYPEID_PLAYER)
         return;
 
-    uint32 mask[3] = {0, 0, 0};
+    ClassFamilyMask mask;
     Unit::AuraList const& noReagent = target->GetAurasByType(SPELL_AURA_NO_REAGENT_USE);
-        for(Unit::AuraList::const_iterator i = noReagent.begin(); i !=  noReagent.end(); ++i)
-        {
-            uint32 const *ptr = (*i)->getAuraSpellClassMask();
-            mask[0] |= ptr[0];
-            mask[1] |= ptr[1];
-            mask[2] |= ptr[2];
-        }
+    for(Unit::AuraList::const_iterator i = noReagent.begin(); i !=  noReagent.end(); ++i)
+        mask |= (*i)->GetAuraSpellClassMask();
 
-    target->SetUInt32Value(PLAYER_NO_REAGENT_COST_1+0, mask[0]);
-    target->SetUInt32Value(PLAYER_NO_REAGENT_COST_1+1, mask[1]);
-    target->SetUInt32Value(PLAYER_NO_REAGENT_COST_1+2, mask[2]);
+    target->SetUInt64Value(PLAYER_NO_REAGENT_COST_1+0, mask.Flags);
+    target->SetUInt32Value(PLAYER_NO_REAGENT_COST_1+2, mask.Flags2);
 }
 
 /*********************************************************/
@@ -7548,7 +7527,7 @@ void Aura::HandleSchoolAbsorb(bool apply, bool Real)
             {
                 case SPELLFAMILY_PRIEST:
                     // Power Word: Shield
-                    if (spellProto->SpellFamilyFlags & UI64LIT(0x0000000000000001))
+                    if (spellProto->SpellFamilyFlags.test<CF_PRIEST_POWER_WORD_SHIELD>())
                     {
                         //+80.68% from +spell bonus
                         DoneActualBenefit = caster->SpellBaseHealingBonusDone(GetSpellSchoolMask(spellProto)) * 0.8068f;
@@ -7568,24 +7547,24 @@ void Aura::HandleSchoolAbsorb(bool apply, bool Real)
                     break;
                 case SPELLFAMILY_MAGE:
                     // Frost Ward, Fire Ward
-                    if (spellProto->IsFitToFamilyMask(UI64LIT(0x0000000000000108)))
+                    if (spellProto->SpellFamilyFlags.test<CF_MAGE_FIRE_WARD, CF_MAGE_FROST_WARD>())
                         //+10% from +spell bonus
                         DoneActualBenefit = caster->SpellBaseDamageBonusDone(GetSpellSchoolMask(spellProto)) * 0.1f;
                     // Ice Barrier
-                    else if (spellProto->IsFitToFamilyMask(UI64LIT(0x0000000100000000)))
+                    else if (spellProto->SpellFamilyFlags.test<CF_MAGE_ICE_BARRIER>())
                         //+80.67% from +spell bonus
                         DoneActualBenefit = caster->SpellBaseDamageBonusDone(GetSpellSchoolMask(spellProto)) * 0.8067f;
                     break;
                 case SPELLFAMILY_WARLOCK:
                     // Shadow Ward
-                    if (spellProto->IsFitToFamilyMask(UI64LIT(0x0000000000000000), 0x00000040))
+                    if (spellProto->SpellFamilyFlags.test<CF_WARLOCK_MISC_BUFFS>())
                         //+30% from +spell bonus
                         DoneActualBenefit = caster->SpellBaseDamageBonusDone(GetSpellSchoolMask(spellProto)) * 0.30f;
                     break;
                 case SPELLFAMILY_PALADIN:
                     // Sacred Shield
                     // (check not strictly needed, only Sacred Shield has SPELL_AURA_SCHOOL_ABSORB in SPELLFAMILY_PALADIN at this time)
-                    if (spellProto->IsFitToFamilyMask(UI64LIT(0x0008000000000000)))
+                    if (spellProto->SpellFamilyFlags.test<CF_PALADIN_SACRED_SHIELD>())
                     {
                         // +75% from spell power
                         DoneActualBenefit = caster->SpellBaseHealingBonusDone(GetSpellSchoolMask(spellProto)) * 0.75f;
@@ -7602,6 +7581,7 @@ void Aura::HandleSchoolAbsorb(bool apply, bool Real)
             DoneActualBenefit *= caster->CalculateLevelPenalty(GetSpellProto());
 
             m_modifier.m_amount += (int32)DoneActualBenefit;
+            m_modifier.m_baseamount += (int32)DoneActualBenefit;
         }
     }
     else
@@ -7609,7 +7589,7 @@ void Aura::HandleSchoolAbsorb(bool apply, bool Real)
         if (caster &&
             // Power Word: Shield
             spellProto->SpellFamilyName == SPELLFAMILY_PRIEST && spellProto->Mechanic == MECHANIC_SHIELD &&
-            (spellProto->SpellFamilyFlags & UI64LIT(0x0000000000000001)) &&
+            spellProto->SpellFamilyFlags.test<CF_PRIEST_POWER_WORD_SHIELD>() &&
             // completely absorbed or dispelled
             (m_removeMode == AURA_REMOVE_BY_SHIELD_BREAK || m_removeMode == AURA_REMOVE_BY_DISPEL))
         {
@@ -7844,7 +7824,7 @@ void Aura::PeriodicTick()
             }
 
             // Curse of Agony damage-per-tick calculation
-            if (spellProto->SpellFamilyName==SPELLFAMILY_WARLOCK && (spellProto->SpellFamilyFlags & UI64LIT(0x0000000000000400)) && spellProto->SpellIconID==544)
+            if (spellProto->SpellFamilyName==SPELLFAMILY_WARLOCK && spellProto->SpellFamilyFlags.test<CF_WARLOCK_CURSE_OF_AGONY>() && spellProto->SpellIconID==544)
             {
                 // 1..4 ticks, 1/2 from normal tick damage
                 if (GetAuraTicks() <= 4)
@@ -7898,7 +7878,7 @@ void Aura::PeriodicTick()
             pCaster->DealDamage(target, pdamage, &cleanDamage, DOT, GetSpellSchoolMask(spellProto), spellProto, true);
 
             // Drain Soul (chance soul shard)
-            if (pCaster->GetTypeId() == TYPEID_PLAYER && spellProto->SpellFamilyName == SPELLFAMILY_WARLOCK && spellProto->SpellFamilyFlags & UI64LIT(0x0000000000004000))
+            if (pCaster->GetTypeId() == TYPEID_PLAYER && spellProto->SpellFamilyName == SPELLFAMILY_WARLOCK && spellProto->SpellFamilyFlags.test<CF_WARLOCK_DRAIN_SOUL>())
             {
                 // Only from non-grey units
                 if (roll_chance_i(10) &&                    // 1-2 from drain with final and without glyph, 0-1 from damage
@@ -8861,7 +8841,7 @@ void Aura::PeriodicDummyTick()
         case SPELLFAMILY_HUNTER:
         {
             // Explosive Shot
-            if (spell->SpellFamilyFlags & UI64LIT(0x8000000000000000))
+            if (spell->SpellFamilyFlags.test<CF_HUNTER_EXPLOSIVE_SHOT>())
             {
                 target->CastCustomSpell(target, 53352, &m_modifier.m_amount, 0, 0, true, 0, this, GetCasterGuid());
                 return;
@@ -8900,17 +8880,17 @@ void Aura::PeriodicDummyTick()
         case SPELLFAMILY_DEATHKNIGHT:
         {
             // Death and Decay
-            if (spell->SpellFamilyFlags & UI64LIT(0x0000000000000020))
+            if (spell->SpellFamilyFlags.test<CF_DEATHKNIGHT_DEATH_AND_DECAY>())
             {
                 if (Unit *caster = GetCaster())
                     caster->CastCustomSpell(target, 52212, &m_modifier.m_amount, NULL, NULL, true, NULL, this);
                 return;
             }
             // Raise Dead
-//            if (spell->SpellFamilyFlags & UI64LIT(0x0000000000001000))
+//            if (spell->SpellFamilyFlags.test<CF_DEATHKNIGHT_RAISE_DEAD>())
 //                return;
             // Chains of Ice
-            if (spell->SpellFamilyFlags & UI64LIT(0x0000400000000000))
+            if (spell->SpellFamilyFlags.test<CF_DEATHKNIGHT_CHAINS_OF_ICE2>())
             {
                 // Get 0 effect aura
                 Aura *slow = target->GetAura(GetId(), EFFECT_INDEX_0);
@@ -8924,16 +8904,8 @@ void Aura::PeriodicDummyTick()
                 }
                 return;
             }
-            // Hysteria
-            if (spell->SpellFamilyFlags & UI64LIT(0x0000000020000000))
-            {
-                uint32 deal = m_modifier.m_amount * target->GetMaxHealth() / 100;
-                target->DealDamage(target, deal, NULL, DIRECT_DAMAGE, SPELL_SCHOOL_MASK_NORMAL, NULL, false);
-                target->SendSpellNonMeleeDamageLog(target, spell->Id, deal, SPELL_SCHOOL_MASK_NORMAL, 0, 0, false, 0, false);
-                return;
-            }
             // Summon Gargoyle
-//            if (spell->SpellFamilyFlags & UI64LIT(0x0000008000000000))
+//            if (spell->SpellFamilyFlags.test<CF_DEATHKNIGHT_SUMMON_GARGOYLE>())
 //                return;
             // Bladed Armor
             if (spell->SpellIconID == 2653)
@@ -8968,7 +8940,7 @@ void Aura::PeriodicDummyTick()
 //            if (spell->SpellIconID == 30412)
 //                return;
             // Hysteria
-            if (spell->SpellFamilyFlags & UI64LIT(0x0000000020000000))
+            if (spell->SpellFamilyFlags.test<CF_DEATHKNIGHT_HYSTERIA>())
             {
                 // damage not expected to be show in logs, not any damage spell related to damage apply
                 uint32 deal = m_modifier.m_amount * target->GetMaxHealth() / 100;
@@ -9011,7 +8983,7 @@ void Aura::HandleManaShield(bool apply, bool Real)
             switch(GetSpellProto()->SpellFamilyName)
             {
                 case SPELLFAMILY_MAGE:
-                    if(GetSpellProto()->SpellFamilyFlags & UI64LIT(0x0000000000008000))
+                    if(GetSpellProto()->SpellFamilyFlags.test<CF_MAGE_MANA_SHIELD>())
                     {
                         // Mana Shield
                         // +50% from +spd bonus
@@ -9325,7 +9297,7 @@ bool Aura::IsCritFromAbilityAura(Unit* caster, uint32& damage)
     }
 
     // Special exception for Rupture spell, damage can crit after patch 3.3.3
-    if (GetSpellProto()->SpellFamilyName == SPELLFAMILY_ROGUE && GetSpellProto()->SpellFamilyFlags & UI64LIT(0x000000000000100000))
+    if (GetSpellProto()->SpellFamilyName == SPELLFAMILY_ROGUE && GetSpellProto()->SpellFamilyFlags.test<CF_ROGUE_RUPTURE>())
     {
         if(caster->IsSpellCrit(GetTarget(), GetSpellProto(), GetSpellSchoolMask(GetSpellProto())))
         {
@@ -9546,11 +9518,11 @@ void SpellAuraHolder::_AddSpellAuraHolder()
             m_target->ModifyAuraState(AURA_STATE_JUDGEMENT, true);
 
         // Conflagrate aura state on Immolate and Shadowflame
-        if (m_spellProto->IsFitToFamily(SPELLFAMILY_WARLOCK, UI64LIT(0x0000000000000004), 0x00000002))
+        if (m_spellProto->IsFitToFamily<SPELLFAMILY_WARLOCK, CF_WARLOCK_IMMOLATE, CF_WARLOCK_SHADOWFLAME2>())
             m_target->ModifyAuraState(AURA_STATE_CONFLAGRATE, true);
 
         // Faerie Fire (druid versions)
-        if (m_spellProto->IsFitToFamily(SPELLFAMILY_DRUID, UI64LIT(0x0000000000000400)))
+        if (m_spellProto->IsFitToFamily<SPELLFAMILY_DRUID, CF_DRUID_FAERIE_FIRE>())
             m_target->ModifyAuraState(AURA_STATE_FAERIE_FIRE, true);
 
         // Sting (hunter's pet ability)
@@ -9558,15 +9530,15 @@ void SpellAuraHolder::_AddSpellAuraHolder()
             m_target->ModifyAuraState(AURA_STATE_FAERIE_FIRE, true);
 
         // Victorious
-        if (m_spellProto->IsFitToFamily(SPELLFAMILY_WARRIOR, UI64LIT(0x0004000000000000)))
+        if (m_spellProto->IsFitToFamily<SPELLFAMILY_WARRIOR, CF_WARRIOR_VICTORIOUS>())
             m_target->ModifyAuraState(AURA_STATE_WARRIOR_VICTORY_RUSH, true);
 
         // Swiftmend state on Regrowth & Rejuvenation
-        if (m_spellProto->IsFitToFamily(SPELLFAMILY_DRUID, UI64LIT(0x0000000000000050)))
+        if (m_spellProto->IsFitToFamily<SPELLFAMILY_DRUID, CF_DRUID_REJUVENATION, CF_DRUID_REGROWTH>())
             m_target->ModifyAuraState(AURA_STATE_SWIFTMEND, true);
 
         // Deadly poison aura state
-        if (m_spellProto->IsFitToFamily(SPELLFAMILY_ROGUE, UI64LIT(0x0000000000010000)))
+        if (m_spellProto->IsFitToFamily<SPELLFAMILY_ROGUE, CF_ROGUE_DEADLY_POISON>())
             m_target->ModifyAuraState(AURA_STATE_DEADLY_POISON, true);
 
         // Enrage aura state
@@ -9650,8 +9622,7 @@ void SpellAuraHolder::_RemoveSpellAuraHolder()
         }
 
         uint32 removeState = 0;
-        uint64 removeFamilyFlag = m_spellProto->SpellFamilyFlags;
-        uint32 removeFamilyFlag2 = m_spellProto->SpellFamilyFlags2;
+        ClassFamilyMask removeFamilyFlag = m_spellProto->SpellFamilyFlags;
         switch(m_spellProto->SpellFamilyName)
         {
             case SPELLFAMILY_PALADIN:
@@ -9660,32 +9631,31 @@ void SpellAuraHolder::_RemoveSpellAuraHolder()
                 break;
             case SPELLFAMILY_WARLOCK:
                 // Conflagrate aura state on Immolate and Shadowflame,
-                if (m_spellProto->IsFitToFamilyMask(UI64LIT(0x0000000000000004), 0x00000002))
+                if (m_spellProto->SpellFamilyFlags.test<CF_WARLOCK_IMMOLATE, CF_WARLOCK_SHADOWFLAME2>())
                 {
-                    removeFamilyFlag = UI64LIT(0x0000000000000004);
-                    removeFamilyFlag2 = 0x00000002;
+                    removeFamilyFlag = ClassFamilyMask::create<CF_WARLOCK_IMMOLATE, CF_WARLOCK_SHADOWFLAME2>();
                     removeState = AURA_STATE_CONFLAGRATE;
                 }
                 break;
             case SPELLFAMILY_DRUID:
-                if (m_spellProto->IsFitToFamilyMask(UI64LIT(0x0000000000000400)))
+                if (m_spellProto->SpellFamilyFlags.test<CF_DRUID_FAERIE_FIRE>())
                     removeState = AURA_STATE_FAERIE_FIRE;   // Faerie Fire (druid versions)
-                else if (m_spellProto->IsFitToFamilyMask(UI64LIT(0x0000000000000050)))
+                else if (m_spellProto->SpellFamilyFlags.test<CF_DRUID_REJUVENATION, CF_DRUID_REGROWTH>())
                 {
-                    removeFamilyFlag = 0x50;
+                    removeFamilyFlag = ClassFamilyMask::create<CF_DRUID_REJUVENATION, CF_DRUID_REGROWTH>();
                     removeState = AURA_STATE_SWIFTMEND;     // Swiftmend aura state
                 }
                 break;
             case SPELLFAMILY_WARRIOR:
-                if (m_spellProto->IsFitToFamilyMask(UI64LIT(0x0004000000000000)))
+                if (m_spellProto->SpellFamilyFlags.test<CF_WARRIOR_VICTORIOUS>())
                     removeState = AURA_STATE_WARRIOR_VICTORY_RUSH; // Victorious
                 break;
             case SPELLFAMILY_ROGUE:
-                if (m_spellProto->IsFitToFamilyMask(UI64LIT(0x0000000000010000)))
+                if (m_spellProto->SpellFamilyFlags.test<CF_ROGUE_DEADLY_POISON>())
                     removeState = AURA_STATE_DEADLY_POISON; // Deadly poison aura state
                 break;
             case SPELLFAMILY_HUNTER:
-                if (m_spellProto->IsFitToFamilyMask(UI64LIT(0x1000000000000000)))
+                if (m_spellProto->SpellFamilyFlags.test<CF_HUNTER_PET_SPELLS>())
                     removeState = AURA_STATE_FAERIE_FIRE;   // Sting (hunter versions)
         }
 
@@ -9697,7 +9667,7 @@ void SpellAuraHolder::_RemoveSpellAuraHolder()
             for (Unit::SpellAuraHolderMap::const_iterator i = holders.begin(); i != holders.end(); ++i)
             {
                 SpellEntry const *auraSpellInfo = (*i).second->GetSpellProto();
-                if (auraSpellInfo->IsFitToFamily(SpellFamily(m_spellProto->SpellFamilyName), removeFamilyFlag, removeFamilyFlag2))
+                if (auraSpellInfo->IsFitToFamily(SpellFamily(m_spellProto->SpellFamilyName), removeFamilyFlag))
                 {
                     found = true;
                     break;
@@ -9946,6 +9916,14 @@ void SpellAuraHolder::HandleSpellSpecificBoosts(bool apply)
     {
         case SPELLFAMILY_GENERIC:
         {
+            // Bandages
+            if (GetSpellProto()->Mechanic == MECHANIC_BANDAGE && !apply)
+            {
+                cast_at_remove = true;
+                spellId1 = 11196;                     // Recently Bandaged
+                break;
+            }
+
             switch(GetId())
             {
                 case 30421:                                 // Nether Portal - Perseverance
@@ -10096,7 +10074,7 @@ void SpellAuraHolder::HandleSpellSpecificBoosts(bool apply)
                     return;
                 break;
             }
-            else if (m_spellProto->SpellFamilyFlags & 0x20LL && GetSpellProto()->SpellVisual[0] == 13)
+            else if (m_spellProto->SpellFamilyFlags.test<CF_MAGE_FROSTBOLT>() && GetSpellProto()->SpellVisual[0] == 13)
             {
                 // Glyph of Frostbolt
                 if (Unit * caster = GetCaster())
@@ -10182,19 +10160,31 @@ void SpellAuraHolder::HandleSpellSpecificBoosts(bool apply)
             if(!apply)
             {
                 // Remove Blood Frenzy only if target no longer has any Deep Wound or Rend (applying is handled by procs)
-                if (GetSpellProto()->Mechanic != MECHANIC_BLEED)
+                if (GetSpellProto()->Mechanic == MECHANIC_BLEED)
+                {
+
+                    // If target still has one of Warrior's bleeds, do nothing
+                    Unit::AuraList const& PeriodicDamage = m_target->GetAurasByType(SPELL_AURA_PERIODIC_DAMAGE);
+                    for(Unit::AuraList::const_iterator i = PeriodicDamage.begin(); i != PeriodicDamage.end(); ++i)
+                        if( (*i)->GetCasterGuid() == GetCasterGuid() &&
+                            (*i)->GetSpellProto()->SpellFamilyName == SPELLFAMILY_WARRIOR &&
+                            (*i)->GetSpellProto()->Mechanic == MECHANIC_BLEED)
+                            return;
+
+                    spellId1 = 30069;                           // Blood Frenzy (Rank 1)
+                    spellId2 = 30070;                           // Blood Frenzy (Rank 2)
+                    break;
+                }
+                else if (GetId() == 44521 && m_target && m_target->GetTypeId() == TYPEID_PLAYER)
+                {
+                    Player* plr = (Player*)m_target;
+                    plr->SetPower(POWER_MANA, plr->GetMaxPower(POWER_MANA));
+                    plr->SetPower(POWER_RAGE, 0);
+                    plr->SetPower(POWER_ENERGY, plr->GetMaxPower(POWER_ENERGY));
+                    plr->SetPower(POWER_RUNIC_POWER, 0);
                     return;
-
-                // If target still has one of Warrior's bleeds, do nothing
-                Unit::AuraList const& PeriodicDamage = m_target->GetAurasByType(SPELL_AURA_PERIODIC_DAMAGE);
-                for(Unit::AuraList::const_iterator i = PeriodicDamage.begin(); i != PeriodicDamage.end(); ++i)
-                    if( (*i)->GetCasterGuid() == GetCasterGuid() &&
-                        (*i)->GetSpellProto()->SpellFamilyName == SPELLFAMILY_WARRIOR &&
-                        (*i)->GetSpellProto()->Mechanic == MECHANIC_BLEED)
-                        return;
-
-                spellId1 = 30069;                           // Blood Frenzy (Rank 1)
-                spellId2 = 30070;                           // Blood Frenzy (Rank 2)
+                }
+                return;
             }
             else
             {
@@ -10211,7 +10201,7 @@ void SpellAuraHolder::HandleSpellSpecificBoosts(bool apply)
         case SPELLFAMILY_WARLOCK:
         {
             // Fear (non stacking)
-            if (m_spellProto->SpellFamilyFlags & UI64LIT(0x0000040000000000))
+            if (m_spellProto->SpellFamilyFlags.test<CF_WARLOCK_FEAR>())
             {
                 if(!apply)
                 {
@@ -10242,7 +10232,7 @@ void SpellAuraHolder::HandleSpellSpecificBoosts(bool apply)
                     return;
             }
             // Shadowflame (DoT)
-            else if (m_spellProto->IsFitToFamilyMask(UI64LIT(0x0000000000000000), 0x00000002))
+            else if (m_spellProto->SpellFamilyFlags.test<CF_WARLOCK_SHADOWFLAME2>())
             {
                 // Glyph of Shadowflame
                 Unit* caster;
@@ -10284,22 +10274,6 @@ void SpellAuraHolder::HandleSpellSpecificBoosts(bool apply)
                 }
                 else
                     return;
-            }
-            // Power Word: Shield
-            else if (apply && m_spellProto->SpellFamilyFlags & UI64LIT(0x0000000000000001) && m_spellProto->Mechanic == MECHANIC_SHIELD)
-            {
-                Unit* caster = GetCaster();
-               if(!caster)
-                    return;
-
-                // Glyph of Power Word: Shield
-                if (Aura* glyph = caster->GetAura(55672, EFFECT_INDEX_0))
-                {
-                    Aura *shield = GetAuraByEffectIndex(EFFECT_INDEX_0);
-                    int32 heal = (glyph->GetModifier()->m_amount * shield->GetModifier()->m_amount)/100;
-                    caster->CastCustomSpell(m_target, 56160, &heal, NULL, NULL, true, 0, shield);
-                }
-                return;
             }
 
             switch(GetId())
@@ -10343,7 +10317,7 @@ void SpellAuraHolder::HandleSpellSpecificBoosts(bool apply)
         case SPELLFAMILY_DRUID:
         {
             // Rejuvenation
-            if (GetSpellProto()->SpellFamilyFlags & UI64LIT(0x0000000000000010))
+            if (GetSpellProto()->SpellFamilyFlags.test<CF_DRUID_REJUVENATION>())
             {
                 Unit* caster = GetCaster();
                 if (!caster)
@@ -10371,7 +10345,7 @@ void SpellAuraHolder::HandleSpellSpecificBoosts(bool apply)
         case SPELLFAMILY_ROGUE:
         {
             // remove debuf savage combat
-            if (GetSpellProto()->SpellFamilyFlags & UI64LIT(0x0008000010014000))
+            if (GetSpellProto()->SpellFamilyFlags.test<CF_ROGUE_CRIPPLING_POISON, CF_ROGUE_DEADLY_POISON,CF_ROGUE_WOUND_POISON, CF_ROGUE_POISON_UNK>())
             {
                 // search poison
                 bool found = false;
@@ -10393,7 +10367,7 @@ void SpellAuraHolder::HandleSpellSpecificBoosts(bool apply)
                 }
             }
             // Sprint (skip non player casted spells by category)
-            else if (GetSpellProto()->SpellFamilyFlags & UI64LIT(0x0000000000000040) && GetSpellProto()->Category == 44)
+            else if (GetSpellProto()->SpellFamilyFlags.test<CF_ROGUE_SPRINT>() && GetSpellProto()->Category == 44)
             {
                 if(!apply || m_target->HasAura(58039))      // Glyph of Blurred Speed
                     spellId1 = 61922;                       // Sprint (waterwalk)
@@ -10465,7 +10439,7 @@ void SpellAuraHolder::HandleSpellSpecificBoosts(bool apply)
                 }
                 default:
                     // Freezing Trap Effect
-                    if (m_spellProto->SpellFamilyFlags & UI64LIT(0x0000000000000008))
+                    if (m_spellProto->SpellFamilyFlags.test<CF_HUNTER_FREEZING_TRAP_EFFECT>())
                     {
                         if(!apply)
                         {
@@ -10483,7 +10457,7 @@ void SpellAuraHolder::HandleSpellSpecificBoosts(bool apply)
                             return;
                     }
                     // Aspect of the Dragonhawk dodge
-                    else if (GetSpellProto()->IsFitToFamilyMask(UI64LIT(0x0000000000000000), 0x00001000))
+                    else if (GetSpellProto()->SpellFamilyFlags.test<CF_HUNTER_ASPECT_OF_THE_DRAGONHAWK>())
                     {
                         spellId1 = 61848;
 
@@ -10561,7 +10535,7 @@ void SpellAuraHolder::HandleSpellSpecificBoosts(bool apply)
                 return;
 
             // Sanctified Retribution and Swift Retribution (they share one aura), but not Retribution Aura (already gets modded)
-            if ((GetSpellProto()->SpellFamilyFlags & UI64LIT(0x0000000000000008))==0)
+            if (!GetSpellProto()->SpellFamilyFlags.test<CF_PALADIN_RETRIBUTION_AURA>())
                 spellId1 = 63531;                           // placeholder for talent spell mods
             // Improved Concentration Aura (auras bonus)
             spellId2 = 63510;                               // placeholder for talent spell mods
@@ -10809,44 +10783,41 @@ void SpellAuraHolder::HandleSpellSpecificBoosts(bool apply)
     SetInUse(false);
 }
 
-void SpellAuraHolder::HandleBoundUnit(bool apply)
+void SpellAuraHolder::HandleSpellSpecificBoostsForward(bool apply)
 {
-    if (m_boundUnitGuid.IsEmpty())
-        return;
-
-    if (apply)
-        return;
-
-    // Some spell effects have aura-like character (duration) and are always bound
-    // to an aura. Handle those special effects here.
-    for (uint32 i = 0; i < MAX_EFFECT_INDEX; ++i)
+    switch(GetSpellProto()->SpellFamilyName)
     {
-        switch (SpellEffects(GetSpellProto()->Effect[i]))
+        case SPELLFAMILY_PRIEST:
         {
-            case SPELL_EFFECT_SUMMON:
+            // Power Word: Shield
+            if (GetSpellProto()->SpellFamilyFlags.test<CF_PRIEST_POWER_WORD_SHIELD>() && GetSpellProto()->Mechanic == MECHANIC_SHIELD)
             {
-                // possesed summons need to be unsummoned if aura is cancelled
-                uint32 prop_id = GetSpellProto()->EffectMiscValueB[i];
-                SummonPropertiesEntry const *summon_prop = sSummonPropertiesStore.LookupEntry(prop_id);
-                if(!summon_prop || summon_prop->Group != SUMMON_PROP_GROUP_CONTROLLABLE)
-                    return;
+                Unit* caster = GetCaster();
 
-                Unit* boundUnit = m_target->GetMap()->GetUnit(m_boundUnitGuid);
+                if (caster && !apply)
+                {
+                    // Glyph of Power Word: Shield
+                    if (Aura* glyph = caster->GetAura(55672, EFFECT_INDEX_0))
+                    {
+                        int32 remainingDamage = 0;
+                        if (Aura* shield = GetAuraByEffectIndex(EFFECT_INDEX_0))
+                        {
+                            int32 remainingDamage = shield->GetModifier()->m_baseamount;
+                            if (shield->GetModifier()->m_amount > 0)
+                                remainingDamage -= shield->GetModifier()->m_amount;
 
-                if (!boundUnit)
-                    return;
-                MANGOS_ASSERT((boundUnit->GetTypeId() == TYPEID_UNIT && ((Creature*)boundUnit)->IsPossessedSummon()));
-                ((PossessedSummon*)boundUnit)->UnSummon();
+                            int32 heal = (glyph->GetModifier()->m_amount * remainingDamage)/100;
+                            if (heal > 0)
+                                caster->CastCustomSpell(m_target, 56160, &heal, NULL, NULL, true, 0, shield);
+                        }
+                    }
+                }
                 return;
             }
-            case SPELL_EFFECT_REDIRECT_THREAT:
-            {
-                // TODO: implement :-P
-                return;
-            }
-            default:
-                break;
+            break;
         }
+        default:
+            return;
     }
 }
 
