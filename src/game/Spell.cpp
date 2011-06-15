@@ -1258,7 +1258,7 @@ void Spell::DoSpellHitOnUnit(Unit *unit, uint32 effectMask)
                 if (m_spellInfo->Id != 3600 && m_spellInfo->Id != 32375 && m_spellInfo->Id != 32592 && m_spellInfo->Id != 72734 &&
                     m_spellInfo->Id != 51690 && m_spellInfo->Id != 53055 && m_spellInfo->Id != 58838 && m_spellInfo->Id != 13809 ||
                     // some spells must break stealth
-                    (m_spellInfo->SpellFamilyName == SPELLFAMILY_ROGUE && m_spellInfo->SpellFamilyFlags == SPELLFAMILYFLAG_ROGUE_SAP))
+                    (m_spellInfo->IsFitToFamily<SPELLFAMILY_ROGUE, CF_ROGUE_SAP>()))
                 {
                     unit->RemoveSpellsCausingAura(SPELL_AURA_MOD_STEALTH);
                 }

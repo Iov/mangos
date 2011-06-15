@@ -6377,9 +6377,6 @@ void Spell::DoSummonPossessed(SpellEffectIndex eff_idx, uint32 forceFaction)
     // initialize all stuff (owner, camera, etc...)
     pCreature->Summon(p_caster, m_spellInfo->Id);
 
-    // bind to auraholder
-    m_spellAuraHolder->SetBoundUnit(pCreature->GetGUID());
-
     if(forceFaction)
         pCreature->setFaction(forceFaction);
 }

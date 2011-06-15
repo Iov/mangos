@@ -4559,7 +4559,6 @@ bool Unit::AddSpellAuraHolder(SpellAuraHolder *holder)
         return false;
 
     holder->HandleSpellSpecificBoosts(true);
-    holder->HandleBoundUnit(true);
 
     return true;
 }
@@ -5212,8 +5211,6 @@ void Unit::RemoveSpellAuraHolder(SpellAuraHolder *holder, AuraRemoveMode mode)
 
     if (mode != AURA_REMOVE_BY_DELETE)
         holder->HandleSpellSpecificBoosts(false);
-
-    holder ->HandleBoundUnit(false);
 
     if(statue)
         statue->UnSummon();
