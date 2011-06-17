@@ -626,6 +626,7 @@ class MANGOS_DLL_SPEC GameObject : public WorldObject
 
         bool HasStaticDBSpawnData() const;                  // listed in `gameobject` table and have fixed in DB guid
 
+        void UpdateRotationFields(float rotation2 = 0.0f, float rotation3 = 0.0f);
         // z_rot, y_rot, x_rot - rotation angles around z, y and x axes
         void SetRotationAngles(float z_rot, float y_rot, float x_rot);
         int64 GetRotation() const { return m_rotation; }
