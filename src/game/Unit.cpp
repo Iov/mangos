@@ -4446,16 +4446,6 @@ bool Unit::AddSpellAuraHolder(SpellAuraHolder *holder)
                         break;
                 }
 
-                if (foundHolder->GetId() == 56152)
-                    continue;
-
-                // Priest's Mind Flay must stack from different casters
-                if (const SpellEntry* sp = foundHolder->GetSpellProto())
-                {
-                    if (sp && sp->IsFitToFamily<SPELLFAMILY_PRIEST, CF_PRIEST_MIND_FLAY2>())
-                        break;
-                }
-
                 switch(aurNameReal)
                 {
                     // DoT/HoT/etc
@@ -4468,33 +4458,23 @@ bool Unit::AddSpellAuraHolder(SpellAuraHolder *holder)
                     case SPELL_AURA_PERIODIC_MANA_LEECH:
                     case SPELL_AURA_OBS_MOD_ENERGY:
                     case SPELL_AURA_POWER_BURN_MANA:
-                    case SPELL_AURA_MOD_DAMAGE_FROM_CASTER: // required for Serpent Sting (blizz hackfix?)
-                    case SPELL_AURA_MOD_MELEE_HASTE:  // for Icy Touch
-                    case SPELL_AURA_MOD_RANGED_HASTE: // for Icy Touch
-                    case SPELL_AURA_MOD_DAMAGE_TAKEN: // for Hemorrhage
-                    case SPELL_AURA_MOD_HIT_CHANCE:   // for Scorpid Sting 
-                    case SPELL_AURA_MOD_SPELL_HIT_CHANCE: // for Scorpid Sting
-                    case SPELL_AURA_MOD_DECREASE_SPEED: // for Mind Flay
-                        break; 
-                    case SPELL_AURA_MOD_ATTACKER_SPELL_AND_WEAPON_CRIT_CHANCE: // Deadly Poison exception
-                        if (aurSpellInfo->Dispel != DISPEL_POISON)             // TODO: stacking rules for all poisons
-                        {
-                            RemoveSpellAuraHolder(foundHolder,AURA_REMOVE_BY_STACK);
-                            stop = true;
-                        }
+                    case SPELL_AURA_MOD_HIT_CHANCE:
+                    case SPELL_AURA_MOD_DAMAGE_TAKEN:
+                        // allow stacking holder if any of the effects contains stackable aura
+                        stop = true;
                         break;
                     case SPELL_AURA_PERIODIC_ENERGIZE:      // all or self or clear non-stackable
                     default:                                // not allow
-                        // can be only single (this check done at _each_ aura add
-                        RemoveSpellAuraHolder(foundHolder,AURA_REMOVE_BY_STACK);
-                        stop = true;
                         break;
                 }
             }
 
-            if(stop)
+            if (!stop)
+            {
+                // can be only single (this check done for each holder)
+                RemoveSpellAuraHolder(foundHolder, AURA_REMOVE_BY_STACK);
                 break;
-
+            }
         }
     }
 
@@ -4718,7 +4698,10 @@ bool Unit::RemoveNoStackAurasDueToAuraHolder(SpellAuraHolder *holder)
                 sLog.outError("SpellAuraHolder (Spell %u) is in process but attempt removed at SpellAuraHolder (Spell %u) adding, need add stack rule for Unit::RemoveNoStackAurasDueToAuraHolder", i->second->GetId(), holder->GetId());
                 continue;
             }
-            RemoveAurasDueToSpell(i_spellId);
+            if (is_spellSpecPerTargetPerCaster)
+                RemoveSpellAuraHolder(i->second);
+            else
+                RemoveAurasDueToSpell(i_spellId);
 
             if( m_spellAuraHolders.empty() )
                 break;
@@ -8877,7 +8860,8 @@ bool Unit::isVisibleForOrDetect(Unit const* u, WorldObject const* viewPoint, boo
 
         //-Stealth Mod(positive like Master of Deception) and Stealth Detection(negative like paranoia)
         //based on wowwiki every 5 mod we have 1 more level diff in calculation
-        visibleDistance += (int32(u->GetTotalAuraModifier(SPELL_AURA_MOD_STEALTH_DETECT)) - stealthMod)/5.0f;
+        int32 detectMod = u->GetTotalAuraModifierByMiscValue(SPELL_AURA_MOD_STEALTH_DETECT, 0); // skip Detect Traps
+        visibleDistance += (detectMod - stealthMod) / 5.0f;
         visibleDistance = visibleDistance > MAX_PLAYER_STEALTH_DETECT_RANGE ? MAX_PLAYER_STEALTH_DETECT_RANGE : visibleDistance;
 
         // recheck new distance
@@ -10360,14 +10344,14 @@ void CharmInfo::InitPossessCreateSpells()
     }
 }
 
-void CharmInfo::InitVehicleCreateSpells()
+void CharmInfo::InitVehicleCreateSpells(uint8 seatId)
 {
     for (uint32 x = ACTION_BAR_INDEX_START; x < ACTION_BAR_INDEX_END; ++x)
         SetActionBar(x, 0, ActiveStates(0x8 + x));
 
-    for (uint32 x = 0; x <= ((Creature*)m_unit)->GetSpellMaxIndex(); ++x)
+    for (uint32 x = 0; x <= ((Creature*)m_unit)->GetSpellMaxIndex(seatId); ++x)
     {
-        uint32 spellId = ((Creature*)m_unit)->GetSpell(x);
+        uint32 spellId = ((Creature*)m_unit)->GetSpell(x,seatId);
 
         if (!spellId)
             continue;
@@ -12551,4 +12535,28 @@ uint32 Unit::CalculateSpellDurationWithHaste(SpellEntry const* spellProto, uint3
     uint32 duration = ceil(float(oldduration) * GetFloatValue(UNIT_MOD_CAST_SPEED));
 
     return duration;
+}
+
+bool Unit::IsVisibleTargetForAoEDamage(WorldObject const* caster, SpellEntry const* spellInfo) const
+{
+    bool no_stealth = false;
+    switch (spellInfo->SpellFamilyName)
+    {
+        case SPELLFAMILY_DRUID:
+        {
+            // Starfall (AoE dummy)
+            if (spellInfo->SpellFamilyFlags.test<CF_DRUID_STARFALL2>())
+                no_stealth = true;
+            break;
+        }
+        default:
+            break;
+    }
+
+    // spell can't hit stealth/invisible targets (LoS check included)
+    if (no_stealth && caster->isType(TYPEMASK_UNIT))
+        return isVisibleForOrDetect(static_cast<Unit const*>(caster), caster, false);
+    // spell can hit stealth/invisible targets, just check for LoS
+    else
+        return caster->IsWithinLOSInMap(this);
 }
