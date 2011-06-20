@@ -1354,13 +1354,7 @@ void BattleGround::AddPlayer(Player *plr)
         plr->UnsummonPetTemporaryIfAny();
 
         if(GetStatus() == STATUS_WAIT_JOIN)                 // not started yet
-        {
             plr->CastSpell(plr, SPELL_ARENA_PREPARATION, true);
-
-            plr->SetHealth(plr->GetMaxHealth());
-            plr->SetPower(POWER_MANA, plr->GetMaxPower(POWER_MANA));
-            plr->SetPower(POWER_RAGE, 0);
-        }
 
         plr->CastSpell(plr, SPELL_ARENA_DAMPENING, true);
     }
@@ -1370,6 +1364,8 @@ void BattleGround::AddPlayer(Player *plr)
 
         if(GetStatus() == STATUS_WAIT_JOIN)                 // not started yet
             plr->CastSpell(plr, SPELL_PREPARATION, true);   // reduces all mana cost of spells.
+
+        plr->CastSpell(plr, SPELL_BATTLEGROUND_DAMPENING, true);
     }
 
     plr->GetAchievementMgr().ResetAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_KILL_CREATURE, ACHIEVEMENT_CRITERIA_CONDITION_MAP, GetMapId());
